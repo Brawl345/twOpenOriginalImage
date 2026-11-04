@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.1.18
 
 - Use Manifest V3 in Firefox
 - Create ZIP files with fflate, saving about 100 KB on every page of X
