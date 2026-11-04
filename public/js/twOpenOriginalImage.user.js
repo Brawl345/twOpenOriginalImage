@@ -27,7 +27,6 @@
 // @description:ja  Web版Twitter・TweetDeckで、原寸画像の表示と保存が簡単にできるようになります。
 // @homepageURL     https://github.com/furyutei/twOpenOriginalImage/
 // @supportURL      https://github.com/furyutei/twOpenOriginalImage/issues
-// @contributionURL https://memo.furyutei.com/about#send_donation
 // @compatible      chrome+tampermonkey
 // @compatible      firefox+violentmonkey
 // ==/UserScript==
@@ -4651,24 +4650,16 @@ async function init_gm_menu() {
                 }, false );
 
                 var config_header = frame_doc.querySelector( `#${config_id}_header` ),
-                    header_link = frame_doc.createElement( 'a' ),
-                    donation_link = frame_doc.createElement( 'a' );
-                
+                    header_link = frame_doc.createElement( 'a' );
+
                 header_link.id = `${config_id}_header-title-link`;
                 header_link.textContent = config_header.textContent;
                 header_link.target = '_blank';
                 header_link.href = GM_info.script.homepage || 'https://github.com/furyutei/twOpenOriginalImage/';
-                
-                donation_link.textContent = messages.DOMATION;
-                donation_link.id = `${config_id}_header-donation-link`;
-                donation_link.target = '_blank';
-                donation_link.href = 'https://memo.furyutei.com/about#send_donation';
-                
-                //config_header.classList.remove( 'center' );
+
                 config_header.textContent = '';
                 config_header.appendChild( header_link );
-                config_header.appendChild( donation_link );
-                
+
                 var save_button = frame_doc.querySelector( `#${config_id}_saveBtn` ),
                     close_button = frame_doc.querySelector( `#${config_id}_closeBtn` ),
                     reset_link = frame_doc.querySelector( `#${config_id}_resetLink` ),
@@ -4777,12 +4768,6 @@ async function init_gm_menu() {
             }
             
             #${config_id}_header-title-link {
-            }
-            
-            #${config_id}_header-donation-link {
-                position: absolute;
-                inset: auto 8px 4px auto ;
-                font-size: 12px;
             }
             
             #${config_id} button,
