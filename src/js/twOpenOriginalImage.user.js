@@ -2226,6 +2226,7 @@ function initialize( user_options ) {
                 img_style.maxWidth = '100%';
                 img_style.height = 'auto';
                 img_style.background = 'white';
+                img_style.display = 'inline';
                 
                 return img_template;
             } )(),
