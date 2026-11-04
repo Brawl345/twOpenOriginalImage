@@ -1,9 +1,48 @@
 {
-  "devDependencies": {
-    "eslint": "^8.46.0",
-    "eslint-plugin-jquery": "^1.5.1"
+  "name": "twopenoriginalimage",
+  "version": "0.1.16",
+  "description": "Open images in original size on X",
+  "private": true,
+  "type": "module",
+  "author": "furyu",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/Brawl345/twOpenOriginalImage"
   },
-  "dependencies": {
-    "lodash": "^4.17.21"
+  "release": {
+    "channel": "github",
+    "browsers": [
+      "chrome",
+      "firefox"
+    ]
+  },
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "build-for-amo": "npm run build:firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "postinstall": "wxt prepare",
+    "check": "npm run lint:types && npm run lint:code && npm test && npm run lint:ext",
+    "lint:types": "wxt prepare && tsc --noEmit",
+    "lint:code": "biome lint",
+    "lint:code-fix": "biome lint --fix",
+    "lint:ext": "npm run build:firefox && web-ext lint --no-config-discovery --self-hosted -s .output/firefox",
+    "format": "biome format --fix",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "release": "tsx scripts/release.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.5",
+    "@types/node": "26.6.6",
+    "happy-dom": "21.0.4",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.1.0",
+    "web-ext": "10.8.0",
+    "wxt": "0.21.5"
   }
 }
