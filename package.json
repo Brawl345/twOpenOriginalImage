@@ -33,6 +33,7 @@
     "format": "biome format --fix",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
+    "test:firefox-window": "web-ext run --no-config-discovery -s tests/firefox-about-blank -t firefox-desktop --start-url https://example.com/?autorun --pref dom.disable_open_during_load=false",
     "release": "tsx scripts/release.ts"
   },
   "devDependencies": {

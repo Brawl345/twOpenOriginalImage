@@ -6,28 +6,10 @@ window.chrome = ( ( typeof browser != 'undefined' ) && browser.runtime ) ? brows
 
 const
     DEBUG = false,
-    SCRIPT_NAME = 'twOpenOriginalImage-options';
+    SCRIPT_NAME = 'twOpenOriginalImage-options',
+    DEFAULT_VALUES = window.twOpenOriginalImage_defaults;
 
 const
-    is_firefox = ( () => {
-        const
-            flag = ( 0 <= window.navigator.userAgent.toLowerCase().indexOf( 'firefox' ) );
-        return () => flag;
-    } )(), // end of is_firefox()
-    
-    is_old_edge = ( () => {
-        const
-            flag = ( 0 <= window.navigator.userAgent.toLowerCase().indexOf( 'edge' ) );
-        return () => flag;
-    } )(), // end of is_old_edge()
-    
-    is_vivaldi = ( () => {
-        // TODO: userAgentに'vivaldi'の文字が含まれなくなっている
-        const
-            flag = ( 0 <= window.navigator.userAgent.toLowerCase().indexOf( 'vivaldi' ) );
-        return () => flag;
-    } )(), // end of is_vivaldi()
-
     background_window = ( ( background_window ) => {
         if ( background_window ) {
             return background_window;
@@ -64,7 +46,8 @@ const
     } )( chrome.extension.getBackgroundPage() );
 
 let
-    value_updated = false,
+    applied_options = null,
+    get_effective_options = null,
     test_event_type = 'unknown';
 
 const
@@ -76,7 +59,7 @@ const
         }
         return response;
     },
-    request_reload_tabs = async ( forced = false ) => {
+    request_reload_tabs = async () => {
         if ( DEBUG ) {
             const
                 response = await send_message_to_background( {
@@ -84,40 +67,31 @@ const
                 } );
             background_window.log_debug( response, '< RELOAD_TABS event done >' );
         }
-        
-        background_window.log_debug( '< unloaded > value_updated:', value_updated );
-        
-        if ( ( ! forced ) && ( ! value_updated ) ) {
+
+        if ( ( applied_options === null ) || ( get_effective_options === null ) ) {
             return;
         }
-        
-        value_updated = false;
-        
-        if ( typeof background_window.reload_tabs == 'function' ) {
-            // Manifest V2だとpopup(options_ui)→backgroundのsendMessage()がうまく動作しない
-            // →backgroundpage下の関数を直接呼び出す
-            await background_window.reload_tabs();
-            // オプションを変更した場合にタブをリロード
-            // ※TODO: 一度でも変更すると、値が同じであってもリロードされる
-            
-            background_window.log_debug( '< reload_tabs() done >' );
+
+        const
+            current_options = JSON.stringify( await get_effective_options() );
+
+        background_window.log_debug( '< unloaded > changed:', current_options !== applied_options );
+
+        if ( current_options === applied_options ) {
+            return;
         }
-        else {
-            // Manifest V3(Service Worker)だとbackgroundのwindowにはアクセスできない
-            // →代わりにsendMessage()使用
-            const
-                response = await send_message_to_background( {
-                    type : 'RELOAD_TABS',
-                } );
-            background_window.log_debug( response, '< RELOAD_TABS event done >' );
-        }
+
+        applied_options = current_options;
+
+        const
+            response = await send_message_to_background( {
+                type : 'RELOAD_TABS',
+            } );
+        background_window.log_debug( response, '< RELOAD_TABS event done >' );
     };
 
 
-// TODO: Vivaldi(少なくとも2.5.1525.48以降)ではoptions_ui(popup)を閉じてもunloadイベントは発生せず、次にpopupを開いたときに発生してしまう
-// → 暫定的に blur イベントで対処
-// TODO: Manifest V3のChromeだとunloadやunloadイベント内のsendMessage()ではService Workerにメッセージが届かない模様
-// → visibilitychangeイベントで代替
+// Manifest V3のChromeだとunloadイベント内のsendMessage()ではService Workerにメッセージが届かない → visibilitychange/blurで代替
 [ 'unload', 'blur', 'visibilitychange' ].forEach( ( event_type ) => window.addEventListener( event_type, async ( event ) => {
     if ( ( event.type == 'visibilitychange' ) && ( document.visibilityState != 'hidden' ) ) {
         return;
@@ -137,37 +111,13 @@ const on_ready = ( callback ) => {
 
 on_ready( async () => {
     const
-        RADIO_KV_LIST = [
-            { key : 'ENABLED_ON_TWEETDECK', val : true },
-            { key : 'DISPLAY_ALL_IN_ONE_PAGE', val : true },
-            { key : 'DISPLAY_OVERLAY', val : true },
-            { key : 'OVERRIDE_CLICK_EVENT', val : true },
-            { key : 'DISPLAY_ORIGINAL_BUTTONS', val : true },
-            { key : 'OVERRIDE_GALLERY_FOR_TWEETDECK', val : true },
-            { key : 'SWAP_IMAGE_URL', val : false },
-            { key : 'HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY', val : true },
-            { key : 'SUPPRESS_FILENAME_SUFFIX', val : false },
-            { key : 'SAME_FILENAME_AS_IN_ZIP', val : true },
-            { key : 'TAB_SORTING', val : true },
-        ],
-        INT_KV_LIST = [
-            //{ key : 'WAIT_AFTER_OPENPAGE', val : 500, min : 0, max : null },
-        ],
+        RADIO_KV_LIST = Object.keys( DEFAULT_VALUES )
+            .filter( ( key ) => key !== 'OPERATION' )
+            .map( ( key ) => ( { key, val : DEFAULT_VALUES[ key ] } ) ),
         STR_KV_LIST = [
             { key : 'BUTTON_TEXT' },
         ],
-        OPTION_KEY_LIST = ( () => {
-            const
-                option_keys = [];
-            
-            [ RADIO_KV_LIST, INT_KV_LIST, STR_KV_LIST ].forEach( ( kv_list ) => {
-                kv_list.forEach( ( kv ) => {
-                    option_keys.push( kv.key );
-                } );
-            } );
-            option_keys.push( 'OPERATION' );
-            return option_keys;
-        } )();
+        OPTION_KEY_LIST = [ ...RADIO_KV_LIST, ...STR_KV_LIST ].map( ( kv ) => kv.key ).concat( 'OPERATION' );
     
     STR_KV_LIST.forEach( ( str_kv ) => {
         str_kv.val = chrome.i18n.getMessage( str_kv.key );
@@ -285,7 +235,6 @@ on_ready( async () => {
                         next_value = check_svalue( input?.value );
 
                     await set_value( key, next_value );
-                    value_updated = true;
                     show_value( next_value );
                 };
             } );
@@ -311,31 +260,9 @@ on_ready( async () => {
                 input.checked = ( input.value === svalue );
                 input.onchange = async () => {
                     await set_value( key, check_svalue( kv, input.value ) );
-                    value_updated = true;
                 };
             } );
         }, // end of set_radio_evt()
-        
-        set_int_evt = async ( kv ) => {
-            const
-                check_svalue = ( kv, svalue ) => {
-                    if ( isNaN( svalue ) ) {
-                        svalue = kv.val;
-                    }
-                    else {
-                        svalue = parseInt( svalue );
-                        if ( ( ( kv.min !== null ) && ( svalue < kv.min ) ) || ( ( kv.max !== null ) && ( kv.max < svalue ) ) ) {
-                            svalue = kv.val;
-                        }
-                    }
-                    svalue = String( svalue );
-                    return svalue;
-                },
-                key = kv.key,
-                svalue = check_svalue( kv, await get_value( key ) );
-
-            bind_text_option( key, svalue, ( input_value ) => check_svalue( kv, input_value ) );
-        }, // end of set_int_evt()
         
         set_str_evt = async ( kv ) => {
             const
@@ -364,14 +291,13 @@ on_ready( async () => {
             let
                 operation = get_bool( await get_value( 'OPERATION' ) );
             
-            operation = ( operation === null ) ? true : operation; // デフォルトは true (動作中)
-            
+            operation = ( operation === null ) ? DEFAULT_VALUES.OPERATION : operation;
+
             const
                 set_operation = async ( next_operation ) => {
                     const
                         button_text = ( next_operation ) ? ( chrome.i18n.getMessage( 'STOP' ) ) : ( chrome.i18n.getMessage( 'START' ) ),
-                        path_to_img = ( is_old_edge() ) ? 'img' : '../img', // TODO: MS-Edge(EdgeHTML) の場合、options.html からの相対パスになっていない（manifest.jsonからの相対パス？）
-                        icon_path = ( next_operation ) ? ( path_to_img + '/icon_48.png' ) : ( path_to_img + '/icon_48-gray.png' );
+                        icon_path = ( next_operation ) ? '../img/icon_48.png' : '../img/icon_48-gray.png';
                     
                     operation_buttons.forEach( ( button ) => {
                         button.value = button_text;
@@ -385,7 +311,6 @@ on_ready( async () => {
             operation_buttons.forEach( ( button ) => {
                 button.onclick = async () => {
                     await set_operation( ! operation );
-                    value_updated = true;
                     await reset_context_menu();
                 };
             } );
@@ -394,29 +319,10 @@ on_ready( async () => {
         }, // end of set_operation_evt()
         
         set_all_evt = async () => {
-            if ( is_firefox() ) {
-                // TODO: Firefox 68.0.1 では、別タブ(about:blank)のdocumentにアクセスできないため、オーバーレイは常に有効とする
-                await set_value( 'DISPLAY_OVERLAY', true );
-            }
             for ( let radio_kv of RADIO_KV_LIST ) {
                 await set_radio_evt( radio_kv );
             }
-            if ( is_firefox() ) {
-                // TODO: Firefox 68.0.1 では、別タブ(about:blank)のdocumentにアクセスできないため、変更不可とする
-                const
-                    display_overlay = document.getElementById( 'DISPLAY_OVERLAY' );
-                if ( display_overlay ) {
-                    display_overlay.style.color = 'gray';
-                }
-                document.querySelectorAll( 'input[name="DISPLAY_OVERLAY"]' ).forEach( ( input ) => {
-                    input.disabled = true;
-                } );
-            }
-            
-            for ( let int_kv of INT_KV_LIST ) {
-                await set_int_evt( int_kv );
-            }
-            
+
             for ( let str_kv of STR_KV_LIST ) {
                 await set_str_evt( str_kv );
             }
@@ -426,11 +332,22 @@ on_ready( async () => {
         };   //  end of set_all_evt()
     
     await set_all_evt();
-    
+
+    get_effective_options = async () => {
+        const
+            stored = await get_values( OPTION_KEY_LIST );
+
+        return Object.fromEntries( [
+            ...RADIO_KV_LIST.map( ( kv ) => [ kv.key, get_bool( stored[ kv.key ], kv.val ) ] ),
+            ...STR_KV_LIST.map( ( kv ) => [ kv.key, String( stored[ kv.key ] ?? '' ).trim() || kv.val ] ),
+            [ 'OPERATION', get_bool( stored.OPERATION, DEFAULT_VALUES.OPERATION ) ],
+        ] );
+    };
+    applied_options = JSON.stringify( await get_effective_options() );
+
     document.querySelectorAll( 'input[name="DEFAULT"]' ).forEach( ( button ) => {
         button.addEventListener( 'click', async () => {
             await remove_values( OPTION_KEY_LIST );
-            value_updated = true;
             await set_all_evt();
         } );
     } );

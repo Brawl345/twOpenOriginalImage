@@ -367,46 +367,6 @@ var is_mac = ( function () {
 } )(); // end of is_mac()
 
 
-var is_edge = ( function () {
-    var flag = ( 0 <= w.navigator.userAgent.toLowerCase().indexOf( 'edge' ) );
-    
-    return function () {
-        return flag;
-    };
-} )(); // end of is_edge()
-
-
-var is_arraybuffer_bug = ( function () {
-    if ( ! is_edge() ) {
-        return function () {
-            return false;
-        };
-    }
-    
-    try {
-        // TODO: MS-Edge (Microsoft Edge 41.16299.15.0/Microsoft EdgeHTML 16.16299) の拡張機能で、ZIP ダウンロード不可。
-        
-        // MS-Edge の拡張機能内では、fetch() を使用したり、XMLHttpRequest で xhr.responseType を 'arraybuffer' にして、xhr.response を得ようとすると
-        // 「SCRIPT65535: 未定義のエラーです。」となってしまう(Microsoft Edge 41.16299.15.0/Microsoft EdgeHTML 16.16299)
-        // ※ 参考： [Fetch API in Extension SCRIPT65535 error - Microsoft Edge Development](https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14192157/)
-        // xhr.responseType = 'blob' なら通るので、Blob で受けてから ArrayBuffer に変換後に JSZip に渡したが、これも内部でエラー発生
-        fetch( 'https://pbs.twimg.com/profile_images/318199851/kaze2_mini.png' ).then( function ( response ) {
-            return response.arrayBuffer();
-        } );
-        
-        return function () {
-            return false;
-        };
-    }
-    catch ( error ) {
-        log_error( 'Some bugs in MS-Edge Extension' );
-        return function () {
-            return true;
-        };
-    }
-} )(); // end of is_arraybuffer_bug()
-
-
 var is_bookmarklet = ( function () {
     var flag =  ( !! ( w[ SCRIPT_NAME + '_bookmarklet' ] ) );
     
@@ -429,17 +389,6 @@ var body_computed_style = getComputedStyle( d.body );
 function is_night_mode() {
     if ( is_react_page() ) {
         // 新 Twitter 用判定
-        /*
-        //var header_elem = d.querySelector( 'header[role="banner"]' );
-        //if ( header_elem ) {
-        //    if ( header_elem.querySelector( ':scope > .r-14lw9ot, :scope > .rn-14lw9ot' ) ) {
-        //        return false;
-        //    }
-        //    else if ( header_elem.querySelector( ':scope > .r-bie543, :scope > .rn-bie543' ) ) {
-        //        return true;
-        //    }
-        //}
-        */
         try {
             return ( body_computed_style.backgroundColor != 'rgb(255, 255, 255)' );
             // [2019.08.07] メニューがサイドバーの「ダークモード」から、「もっと見る」＞「表示」＞「背景画像」に変更、種類も3種になった
@@ -908,33 +857,6 @@ function get_tweet_link_on_react_twitter( tweet ) {
     if ( timestamp_container ) {
         tweet_link = search_ancestor_by_attribute( timestamp_container, 'role', 'link' );
     }
-    /*
-    //if ( ( ! tweet_link ) || is_tweet_detail_on_react_twitter( tweet ) ) {
-    //    tweet_link = null;
-    //    // ※個別ツイートを表示した場合、自身へのリンクが無い→ページのURLをhrefに持つリンクをダミーで作成し、ツイートソースラベルの前に挿入
-    //    var tweet_url = w.location.href.replace( /[?#].*$/g, '' ),
-    //        tweet_source_label = tweet.querySelector( 'a[role="link"][href*="/help.twitter.com/"]' );
-    //    
-    //    if ( tweet_source_label ) {
-    //        tweet_link = tweet_source_label.parentNode.querySelector( '.' + SCRIPT_NAME + '_tweetdetail_link' );
-    //    }
-    //    
-    //    if ( ! tweet_link ) {
-    //        tweet_link = d.createElement( 'a' );
-    //        tweet_link.className = SCRIPT_NAME + '_tweetdetail_link';
-    //        tweet_link.setAttribute( 'role', 'link' );
-    //        tweet_link.style.display = 'none';
-    //        
-    //        if ( tweet_url.match( /\/status(?:es)?\// ) ) {
-    //            tweet_link.setAttribute( 'href', tweet_url );
-    //        }
-    //        
-    //        if ( tweet_source_label ) {
-    //            tweet_source_label.parentNode.insertBefore( tweet_link, tweet_source_label );
-    //        }
-    //    }
-    //}
-    */
     return tweet_link;
 } // end of get_tweet_link_on_react_twitter()
 
@@ -1446,30 +1368,7 @@ function initialize_download_helper() {
         if ( ! current_extension ) {
             return;
         }
-        
-        /*
-        //extension_list.forEach( function( extension ) {
-        //    if ( current_extension == extension ) {
-        //        return;
-        //    }
-        //    var try_img = new Image(),
-        //        try_url = img_url.replace( '.' + current_extension, '.' + extension );
-        //    
-        //    add_event( try_img, 'load', function ( event ) {
-        //        w.location.replace( try_url );
-        //    } );
-        //    
-        //    try {
-        //        try_img.src = try_url;
-        //    }
-        //    catch ( error ) {
-        //        //log_error( error );
-        //        // TODO: Firefox だとうまくいかない
-        //        // Content Security Policy: ページの設定により次のリソースの読み込みをブロックしました: (try_url) ("img-src https://abs.twimg.com https://ssl.google-analytics.com http://www.google-analytics.com")
-        //    }
-        //} );
-        */
-        
+
         ( async () => {
             const
                 valid_img_url = await find_valid_img_url( img_url );
@@ -1668,7 +1567,7 @@ function initialize( user_options ) {
         return;
     }
     
-    if ( ( typeof fflate == 'undefined' ) || ( typeof fflate.zipSync != 'function' ) || is_arraybuffer_bug() ) {
+    if ( ( typeof fflate == 'undefined' ) || ( typeof fflate.zipSync != 'function' ) ) {
         OPTIONS.DOWNLOAD_ZIP_IS_VALID = false;
     }
     
@@ -2319,9 +2218,6 @@ function initialize( user_options ) {
                         
                         
                         function image_overlay_container_download_image_zip() {
-                            if ( is_arraybuffer_bug() ) {
-                                return;
-                            }
                             var tweet_url = image_overlay_close_link.href,
                                 //img_urls = to_array( image_overlay_container.querySelectorAll( '.image-link-container .download-link' ) ).map( function ( download_link ) {
                                 //    return download_link.href;
@@ -2895,12 +2791,6 @@ function initialize( user_options ) {
                     html_style.overflowY = saved_html_overflowY;
                 }
                 else {
-                    /*
-                    //[2020.12] Twitter側の変更のためか、一番上にスクロールしてしまうようになってしまった
-                    //body_style.marginRight = saved_body_marginRight;
-                    //body_style.overflowX = saved_body_overflowX;
-                    //body_style.overflowY = saved_body_overflowY;
-                    */
                     html_style.overflowX = saved_html_overflowX;
                     html_style.overflowY = saved_html_overflowY;
                 }
@@ -3397,12 +3287,6 @@ function initialize( user_options ) {
                 body_style.marginRight = 0;
             }
             else {
-                /*
-                //[2020.12] Twitter側の変更のためか、一番上にスクロールしてしまうようになってしまった
-                //body_style.overflowX = 'hidden';
-                //body_style.overflowY = 'hidden';
-                //body_style.marginRight = 0;
-                */
                 html_style.overflowX = 'hidden';
                 html_style.overflowY = 'hidden';
             }
@@ -3429,7 +3313,9 @@ function initialize( user_options ) {
                 }
             }
             
-            var child_window = w.open( 'about:blank', child_window_name ),
+            // Firefox: a window opened by the content script itself is cross-origin to it, one opened by the page is not
+            var page_window = w.wrappedJSObject,
+                child_window = ( page_window ? page_window : w ).open( 'about:blank', child_window_name ),
                 child_document;
             
             opened_name_map[ child_window_name ] = child_window;
@@ -3444,7 +3330,6 @@ function initialize( user_options ) {
                 }
                 catch ( error ) {
                     log_error( 'cannot access document of child-window ', error );
-                    // TODO: Firefox 68.0.1 では 「DOMException: "Permission denied to access property "document" on cross-origin object"」となってアクセスできない
                     return;
                 }
                 
@@ -3488,17 +3373,13 @@ function initialize( user_options ) {
                 is_complete = true;
             }
             
-            if ( is_firefox() ) {
+            if ( is_firefox() && ( ! page_window ) ) {
                 // TODO: Firefox(Greasemonkey) で window.open() した後 document を書きかえるまでにウェイトをおかないとうまく行かない
                 
                 // TODO: ページが load された後でも書き換えがうまくいかない場合がある
                 // - 一瞬書き換え結果の表示がされた後、空の("<head></head><body></body>"だけの)HTMLになったり、titleだけが書き換わった状態になったりする
                 // - 元のページが固まってしまう場合がある
                 // - Firefoxを再起動すると解消されたりと、結果が安定しない
-                //add_event( child_window, 'load', function ( event ) {
-                //    page_onload();
-                //} );
-                
                 setTimeout( function () {
                     page_onload();
                 }, OPTIONS.WAIT_AFTER_OPENPAGE );
@@ -3831,8 +3712,7 @@ function initialize( user_options ) {
                         
                         button_loading_container_style.display = 'none';
                         
-                        if ( OPTIONS.DISPLAY_OVERLAY || ( is_firefox() && is_extension() ) ) {
-                            // TODO: Firefox 68.0.1 では about:blank の document が「DOMException: "Permission denied to access property "document" on cross-origin object"」となってアクセス不可のため、常にオーバーレイ表示
+                        if ( OPTIONS.DISPLAY_OVERLAY ) {
                             show_overlay( target_img_urls, tweet_url, title, focused_img_url, tweet, target_all_img_urls );
                         }
                         else {
@@ -4045,34 +3925,6 @@ function initialize( user_options ) {
             ancestor;
         
         if ( is_react_page() ) {
-            /*
-            //if ( ! search_ancestor_by_attribute( node, 'data-testid', 'primaryColumn', true ) ) {
-            //    return false;
-            //}
-            //tweet_list = to_array( node.querySelectorAll( 'div[data-testid="tweet"], article[data-testid="tweetDetail"]' ) );
-            //// ※ [2019.08.07] article[data-testid="tweetDetail"] は無くなり、article[role="article"] に置き換わっている
-            //
-            //if ( 0 <= [ 'DIV', 'ARTICLE' ].indexOf( node.tagName ) ) {
-            //    if ( 0 <= [ 'tweet', 'tweetDetail' ].indexOf( node.getAttribute( 'data-testid' ) ) ) {
-            //        tweet_list.push( node );
-            //    }
-            //    else if ( ! has_some_classes( node, [ SCRIPT_NAME + 'Button' ] ) ) {
-            //        tweet = search_ancestor_by_attribute( node, 'data-testid', [ 'tweet', 'tweetDetail' ] ) || search_ancestor_by_attribute( node, 'role', 'article' );
-            //        
-            //        if ( tweet ) {
-            //            tweet_list.push( tweet );
-            //        }
-            //    }
-            //}
-            //tweet_list.forEach( function ( tweet ) {
-            //    var article = search_ancestor_by_attribute( tweet, 'role', 'article' );
-            //    
-            //    if ( article ) {
-            //        tweet = article;
-            //    }
-            //    add_open_button( tweet );
-            //} );
-            */
             const
                article_selector = is_react_tweetdeck() ? 'div[data-testid="cellInnerDiv"] article[role="article"]' : 'div[data-testid="primaryColumn"] article[role="article"]';
                
@@ -4129,19 +3981,7 @@ function initialize( user_options ) {
             if ( ! /^\/i\/keyboard_shortcuts/.test( new URL( location.href ).pathname ) ) {
                 return false;
             }
-            
-            /*
-            ////var modal_header_h2_list = d.querySelectorAll( '[aria-labelledby="modal-header"] h2[data-testid="noRightControl"]' );
-            //var modal_header_h2_list = d.querySelectorAll( '[aria-labelledby="modal-header"] h2[role="heading"][aria-level="2"]:not(#modal-header)' );
-            //
-            //if ( modal_header_h2_list.length < 1 ) {
-            //    return false;
-            //}
-            //
-            //var shortcut_parent = modal_header_h2_list[ modal_header_h2_list.length - 1 ].parentNode.parentNode;
-            //
-            */
-            
+
             var shortcut_parents = d.querySelectorAll( '[aria-labelledby="modal-header"] ul[role="list"]' );
             
             if ( shortcut_parents.length <= 0 ) {

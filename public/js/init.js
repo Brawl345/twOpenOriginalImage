@@ -85,17 +85,9 @@ const
         // →受信準備ができていない場合にエラーになるため、準備できるまで待つ
         const
             wait_msec = 10;
-        let
-            is_ready = false;
-        
+
         return async () => {
-            /*
-            //[TODO] 最初だけのチェックだとなぜかその後のsendMessage()でもエラーが発生する場合がある模様
-            //→暫定的に、常にチェック
-            //if (is_ready) {
-            //    return;
-            //}
-            */
+            // 最初だけのチェックだとその後のsendMessage()でもエラーが発生する場合がある → 常にチェック
             for (;;) {
                 try {
                     const
@@ -104,7 +96,6 @@ const
                         });
                     if (response?.is_ready) {
                         log_debug('background is ready', response);
-                        is_ready = true;
                         break;
                     }
                 }
@@ -120,19 +111,6 @@ const
 
 async function send_content_scripts_info() {
     // content_scripts の情報を渡す
-    /*
-    //window.addEventListener( 'beforeunload', function ( event ) {
-    //    // TODO: メッセージが送信できないケース有り ("Uncaught TypeError: Cannot read property 'sendMessage' of undefined")
-    //    chrome.runtime.sendMessage( {
-    //        type : 'NOTIFICATION_ONUNLOAD',
-    //        info : {
-    //            url : location.href,
-    //            event : 'onbeforeunload',
-    //        }
-    //    }, function ( response ) {
-    //    } );
-    //} );
-    */
     await wait_background_ready();
     try {
         const

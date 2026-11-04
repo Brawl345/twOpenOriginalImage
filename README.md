@@ -17,6 +17,8 @@ npm run dev
 
 `npm run dev:firefox` starts Firefox instead. `npm run check` runs type checks, Biome, the tests and `web-ext lint`.
 
+`npm run test:firefox-window` starts Firefox with a small test add-on on example.com that checks whether a content script can write into an `about:blank` window it opens, which the "open in new tab" view needs. Results show at the top of the page.
+
 ## Release
 
 Write the changes under `## Unreleased` in `CHANGES.md`, then run `npm run release -- <version>`. `npm run release -- --dry-run <version>` builds the packages into `output/` without committing anything.
