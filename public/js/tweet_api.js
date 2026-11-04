@@ -34,7 +34,7 @@ const
     }; // end of log_error()
 
 const // 参照: [Firefox のアドオン(content_scripts)でXMLHttpRequestやfetchを使う場合の注意 - 風柳メモ](https://memo.furyutei.com/entry/20180718/1531914142)
-    fetch = (typeof content != 'undefined' && typeof content.fetch == 'function') ? content.fetch  : window.fetch;
+    fetch = (typeof content != 'undefined' && typeof content.fetch == 'function') ? content.fetch.bind( content ) : window.fetch.bind( window );
 
 const
     async_wait = (wait_msec) => {

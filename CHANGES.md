@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Use Manifest V3 in Firefox
+
 ## v0.1.17
 
 - Support x.com

@@ -21,6 +21,7 @@ const matches = [
 export default defineConfig({
   srcDir: '.',
   outDirTemplate: '{{browser}}{{modeSuffix}}',
+  manifestVersion: 3,
   webExt: {
     disabled: process.env.NO_OPEN === '1',
   },
