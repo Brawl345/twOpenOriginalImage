@@ -41,10 +41,15 @@ export default defineConfig({
       },
       content_scripts: [
         {
+          matches: ['*://x.com/*', '*://mobile.x.com/*'],
+          js: ['js/xhr_monitor.js', 'js/set_xhr_monitor.js'],
+          run_at: 'document_start',
+          world: 'MAIN',
+        },
+        {
           matches,
           js: [
             'fflate.js',
-            'js/inject_script.js',
             'js/tweet_api.js',
             'js/init.js',
           ],
@@ -69,9 +74,6 @@ export default defineConfig({
         default_title: '__MSG_ext_title__',
         default_popup: 'html/options.html',
       },
-      web_accessible_resources: [
-        { matches: ['*://*.x.com/*'], resources: ['js/*.js'] },
-      ],
       ...(updates && browser === 'chrome'
         ? { update_url: `${updateBase}/updates.xml` }
         : {}),

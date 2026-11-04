@@ -5,7 +5,7 @@
 const
     SCRIPT_NAME = 'twOpenOriginalImage',
     DEBUG = false,
-    USE_XHR_MONITOR = false;
+    USE_XHR_MONITOR = true;
 
 const
     log_debug = function () {
@@ -333,9 +333,9 @@ var extension_functions = ( () => {
         const
             reg_graphql_api = new RegExp( '^/i/api/graphql/([^/]+)/([^?]+)' ),
             
-            is_target_instruction_type = ( instruction ) => ( [ 'TimelineAddEntries', 'TimelinePinEntry', ].includes( instruction.type ) ),
-            
             tweet_info_map = {},
+
+            unwrap_tweet_result = ( tweet_result ) => ( tweet_result?.__typename == 'TweetWithVisibilityResults' ) ? tweet_result.tweet : tweet_result,
             
             get_tweet_info = ( tweet_id ) => {
                 const
@@ -353,24 +353,19 @@ var extension_functions = ( () => {
                 }
                 
                 const
-                    operationName = 'TweetDetail';
-                
+                    operationName = 'TweetResultByRestId';
+
                 try {
                     const
                         response_object = await window.tweet_api.call_graphql_api( {
-                            operationName : `${operationName}`,
-                            query_params : {
-                                variables : JSON.stringify( {
-                                    'focalTweetId' : `${tweet_id}`,
-                                    'with_rux_injections' : false,
-                                    'includePromotedContent' : true,
-                                    'withCommunity' : true,
-                                    'withQuickPromoteEligibilityTweetFields' : true,
-                                    'withBirdwatchNotes' : true,
-                                    'withVoice' : true,
-                                    'withV2Timeline' : true,
-                                } ),
-                            }
+                            operationName,
+                            variables : {
+                                tweetId : `${tweet_id}`,
+                                includePromotedContent : false,
+                                withBirdwatchNotes : false,
+                                withVoice : false,
+                                withCommunity : false,
+                            },
                         } );
                     analyze_graphql_api_result( operationName, response_object );
                     const
@@ -385,6 +380,10 @@ var extension_functions = ( () => {
 
             append_tweet_info = ( tweet_result ) => {
                 log_debug( 'append_tweet_info(): tweet_result=', tweet_result );
+                tweet_result = unwrap_tweet_result( tweet_result );
+                if ( ! tweet_result ) {
+                    return;
+                }
                 const
                     quoted_result = tweet_result?.quoted_status_result?.result;
                 
@@ -392,9 +391,11 @@ var extension_functions = ( () => {
                     append_tweet_info( quoted_result );
                 }
                 const
-                    retweed_result = tweet_result?.legacy?.retweeted_status_result?.result,
+                    retweed_result = unwrap_tweet_result( tweet_result?.legacy?.retweeted_status_result?.result ),
                     tweet_result_legacy = ( retweed_result ?? tweet_result )?.legacy ?? {},
-                    user_result_legacy = ( retweed_result ?? tweet_result )?.core?.user_results?.result?.legacy ?? {},
+                    user_result = ( retweed_result ?? tweet_result )?.core?.user_results?.result,
+                    user_result_legacy = user_result?.legacy ?? {},
+                    user_result_core = user_result?.core ?? {},
                     tweet_id = tweet_result_legacy?.id_str,
                     retweet_id = ( retweed_result ) ? tweet_result?.legacy?.id_str : null,
                     quoted_tweet_id = quoted_result?.legacy?.id_str ?? null,
@@ -423,8 +424,8 @@ var extension_functions = ( () => {
                         tweet_id,
                         user : {
                             id : tweet_result_legacy?.user_id_str,
-                            screen_name : user_result_legacy?.screen_name,
-                            name : user_result_legacy?.name,
+                            screen_name : user_result_core.screen_name ?? user_result_legacy.screen_name,
+                            name : user_result_core.name ?? user_result_legacy.name,
                         },
                         full_text : full_text,
                         created_at : tweet_result_legacy?.created_at,
@@ -432,163 +433,31 @@ var extension_functions = ( () => {
                         media_list,
                         retweet_id,
                         quoted_tweet_id,
-                        quoted_tweet_url : ( ! quoted_tweet_id ) ? null : ( quoted_result?.legacy?.quoted_status_permalink?.expanded ?? `https://x.com/${quoted_result?.core?.user_results?.result?.legacy?.screen_name ?? 'i'}/status/${quoted_tweet_id}` ),
+                        quoted_tweet_url : ( ! quoted_tweet_id ) ? null : ( quoted_result?.legacy?.quoted_status_permalink?.expanded ?? `https://x.com/${quoted_result?.core?.user_results?.result?.core?.screen_name ?? quoted_result?.core?.user_results?.result?.legacy?.screen_name ?? 'i'}/status/${quoted_tweet_id}` ),
                     };
                 tweet_info_map[ tweet_id ] = tweet_info;
                 log_debug( 'append_tweet_info(): tweet_id=', tweet_id, tweet_info );
             },
             
-            analyze_entry = ( entry ) => {
-                log_debug( 'analyze_entry(): ', entry );
-                const
-                    entryType = entry?.content?.entryType;
-                
-                switch ( entryType ) {
-                    case 'TimelineTimelineItem' : {
-                        const
-                            item_type = entry?.content?.itemContent?.itemType;
-                        if ( item_type != 'TimelineTweet' ) {
-                            log_debug( `item_type: ${item_type} => ignored`, entry );
-                            break;
-                        }
-                        const
-                            tweet_result = entry?.content?.itemContent?.tweet_results?.result;
-                        if ( ! tweet_result ) {
-                            log_warn( `TimelineTimelineItem: tweet_result not found(item_type=${item_type})`, entry );
-                            break;
-                        }
-                        append_tweet_info( tweet_result );
-                        break;
-                    }
-                    case 'TimelineTimelineModule' : {
-                        ( entry?.content?.items || [] ).map( ( content_item ) => {
-                            const
-                                item_type = content_item?.item?.itemContent?.itemType;
-                            if ( item_type != 'TimelineTweet' ) {
-                                log_debug( `item_type: ${item_type} => ignored`, entry );
-                                return;
-                            }
-                            const
-                                tweet_result = content_item?.item?.itemContent?.tweet_results?.result;
-                            if ( ! tweet_result ) {
-                                log_warn( `TimelineTimelineModule: tweet_result not found(item_type=${item_type})`, content_item, entry );
-                                return;
-                            }
-                            append_tweet_info( tweet_result );
-                        } );
-                        break;
-                    }
-                }
-            },
-            
-            graphql_api_operation_name_map = {
-                HomeTimeline : ( response_object ) => {
-                    ( response_object?.data?.home?.home_timeline_urt?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                HomeLatestTimeline : ( response_object ) => {
-                    ( response_object?.data?.home?.home_timeline_urt?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                ListLatestTweetsTimeline : ( response_object ) => {
-                    ( response_object?.data?.list?.tweets_timeline?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                UserMedia : ( response_object ) => {
-                    ( response_object?.data?.user?.result?.timeline_v2?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                UserTweets : ( response_object ) => {
-                    ( response_object?.data?.user?.result?.timeline_v2?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                UserTweetsAndReplies : ( response_object ) => {
-                    ( response_object?.data?.user?.result?.timeline_v2?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                Likes : ( response_object ) => {
-                    ( response_object?.data?.user?.result?.timeline_v2?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                UserHighlightsTweets : ( response_object ) => {
-                    ( response_object?.data?.user?.result?.timeline?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                Bookmarks : ( response_object ) => {
-                    ( response_object?.data?.bookmark_timeline_v2?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                ArticleTweetsTimeline : ( response_object ) => {
-                    ( response_object?.data?.article_by_rest_id?.tweets_timeline?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                TweetDetail : ( response_object ) => {
-                    ( response_object?.data?.threaded_conversation_with_injections_v2?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-                
-                SearchTimeline : ( response_object ) => {
-                    ( response_object?.data?.search_by_raw_query?.search_timeline?.timeline?.instructions ?? [] )
-                        .filter( is_target_instruction_type )
-                        .map( ( instruction ) => ( ( instruction?.entry ? [ instruction?.entry ] : instruction?.entries ) ?? [] ).map( ( entry ) => {
-                            analyze_entry( entry );
-                        } ) );
-                },
-            },
-            
-            analyze_graphql_api_result = ( operationName, response_object ) => {
-                log_debug( `[${operationName}] response_object:`, response_object );
-                const
-                    graphql_api_operation = graphql_api_operation_name_map[ operationName ];
-                
-                if ( ! graphql_api_operation ) {
-                    log_debug( `Unsupported operation: ${operationName}`, response_object );
+            collect_tweet_results = ( value ) => {
+                if ( Array.isArray( value ) ) {
+                    value.forEach( collect_tweet_results );
                     return;
                 }
-                graphql_api_operation( response_object );
+                if ( ( ! value ) || ( typeof value != 'object' ) ) {
+                    return;
+                }
+                for ( const [ key, child ] of Object.entries( value ) ) {
+                    if ( ( ( key == 'tweet_results' ) || ( key == 'tweetResult' ) ) && child?.result ) {
+                        append_tweet_info( child.result );
+                    }
+                    collect_tweet_results( child );
+                }
+            },
+
+            analyze_graphql_api_result = ( operationName, response_object ) => {
+                log_debug( `[${operationName}] response_object:`, response_object );
+                collect_tweet_results( response_object?.data );
             };
         
         if ( USE_XHR_MONITOR ) {
@@ -617,19 +486,6 @@ var extension_functions = ( () => {
                 }
                 analyze_graphql_api_result( operationName, data.response_object );
             } );
-            
-            let
-                injected_script_infos;
-            
-            injected_script_infos = await window.inject_script_all( [
-                'js/xhr_monitor.js',
-            ] );
-            log_debug( '[js/xhr_monitor.js]', injected_script_infos);
-            
-            injected_script_infos = await window.inject_script_all( [
-                'js/set_xhr_monitor.js',
-            ] );
-            log_debug( '[js/set_xhr_monitor.js]', injected_script_infos);
         }
         
         extension_functions.get_tweet_info = get_tweet_info;

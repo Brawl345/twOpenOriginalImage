@@ -13,28 +13,93 @@ const
     original_prototype_open = xhr_prototype.open,
     original_prototype_setRequestHeader = xhr_prototype.setRequestHeader,
     original_prototype_send = xhr_prototype.send,
-    monitor_info_map = Object.create(null);
+    original_fetch = window.fetch,
+    monitor_info_map = Object.create(null),
+
+    resolve_url = (url) => {
+        try {
+            return new URL(url ?? '', window.location.href).href;
+        }
+        catch (error) {
+            return String(url ?? '');
+        }
+    },
+
+    get_target_monitor_infos = (method, url) => Object.entries(monitor_info_map).filter(([monitor_id, monitor_info]) => {
+        if (! (monitor_info.method_list ?? ['GET',]).includes((method ?? 'GET').toUpperCase())) {
+            return false;
+        }
+        if (! new RegExp(monitor_info.url_filter_reg).test(url)) {
+            return false;
+        }
+        return true;
+    }),
+
+    post_data = (target_monitor_infos, data) => {
+        target_monitor_infos.map(([monitor_id, monitor_info]) => {
+            try {
+                window.postMessage(Object.assign({}, data, {
+                    monitor_id,
+                }), window.location.origin);
+            }
+            catch (error) {
+                console.error('[xhr_monitor]', error);
+            }
+        });
+    };
+
+window.fetch = async function (input, init) {
+    const
+        response = await original_fetch.apply(this, arguments);
+
+    try {
+        const
+            is_request = (typeof Request != 'undefined') && (input instanceof Request),
+            url = resolve_url(is_request ? input.url : input),
+            method = (init?.method ?? (is_request ? input.method : 'GET')).toUpperCase(),
+            target_monitor_infos = get_target_monitor_infos(method, url);
+
+        if (0 < target_monitor_infos.length) {
+            response.clone().text().then((response_text) => {
+                const
+                    data = {
+                        url,
+                        method,
+                        response_url: response.url,
+                        response_text,
+                    };
+                try {
+                    data.response_object = JSON.parse(response_text);
+                }
+                catch (error) {
+                }
+                post_data(target_monitor_infos, data);
+            }).catch((error) => {
+                if (DEBUG) console.debug('[xhr_monitor] fetch body error:', error);
+            });
+        }
+    }
+    catch (error) {
+        if (DEBUG) console.debug('[xhr_monitor] fetch monitor error:', error);
+    }
+
+    return response;
+};
 
 xhr_prototype.open = function (method, url, async, user, password) {
     const
         xhr = this;
-    
+
     (() => {
         if (async === false) {
             return;
         }
-        
+
+        url = resolve_url(url);
+
         const
-            target_monitor_infos = Object.entries(monitor_info_map).filter(([monitor_id, monitor_info]) => {
-                if (! (monitor_info.method_list ?? ['GET',]).includes((method ?? 'GET').toUpperCase())) {
-                    return false;
-                }
-                if (! new RegExp(monitor_info.url_filter_reg).test(url ?? '')) {
-                    return false;
-                }
-                return true;
-            });
-        
+            target_monitor_infos = get_target_monitor_infos(method, url);
+
         if (target_monitor_infos.length < 1) {
             return;
         }
@@ -95,16 +160,7 @@ xhr_prototype.open = function (method, url, async, user, password) {
                 }
             }
             
-            target_monitor_infos.map(([monitor_id, monitor_info]) => {
-                try {
-                    window.postMessage(Object.assign(data, {
-                        monitor_id,
-                    }), window.location.origin);
-                }
-                catch (error) {
-                    console.error('[xhr_monitor]', error);
-                }
-            });
+            post_data(target_monitor_infos, data);
         });
     })();
     

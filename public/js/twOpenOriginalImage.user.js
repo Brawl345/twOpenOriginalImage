@@ -592,24 +592,6 @@ var escape_html = ( function () {
 } )(); // end of escape_html()
 
 
-const
-    parse_cookies = ( cookie_string ) => {
-        if ( ! cookie_string ) {
-            cookie_string = document.cookie;
-        }
-        const
-            cookie_map = cookie_string.split( ';' )
-            .map( ( part_string ) => part_string.split( '=' ) )
-            .reduce( ( cookie_map, [ name, value ] ) => {
-                cookie_map[ decodeURIComponent( name.trim() ) ] = decodeURIComponent( value.trim() );
-                return cookie_map;
-            }, Object.create( null ) );
-        return cookie_map;
-    },
-    
-    get_cookie = ( name ) => parse_cookies()[ name ];
-
-
 function get_scroll_top( doc ) {
     if ( ! doc ) {
         doc = d;
@@ -979,150 +961,6 @@ function get_text_from_element( element ) {
 } // end of get_text_from_element()
 
 
-/*
-//function fetch_status( tweet_id ) {
-//    const
-//        //auth_bearer = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
-//        auth_bearer = 'AAAAAAAAAAAAAAAAAAAAAF7aAAAAAAAASCiRjWvh7R5wxaKkFp7MM%2BhYBqM%3DbQ0JPmjU9F6ZoMhDfI4uTNAaQuTDm2uO9x3WFVr2xBZ2nhjdP0';
-//    return fetch(
-//        ( is_react_twitter() ? 'https://twitter.com/i/api' : 'https://api.twitter.com' ) + '/1.1/statuses/show.json?include_my_retweet=true&include_entities=true&trim_user=false&include_ext_alt_text=true&include_card_uri=true&tweet_mode=extended&id=' + encodeURIComponent( tweet_id ), {
-//        method: 'GET',
-//        headers: {
-//            'authorization' : `Bearer ${auth_bearer}`,
-//            'x-csrf-token' : document.cookie.match( /ct0=(.*?)(?:;|$)/ )[ 1 ],
-//            'x-twitter-active-user' : 'yes',
-//            'x-twitter-auth-type' : 'OAuth2Session',
-//            'x-twitter-client-language' : 'en',
-//        },
-//        mode: 'cors',
-//        credentials : 'include',
-//    } )
-//    .then( response => {
-//        if ( ! response.ok ) {
-//            throw new Error( 'Network response was not ok' );
-//        }
-//        return response.json()
-//    } );
-//} // end of fetch_status()
-*/
-
-
-const
-    fetch_status_json = ( () => {
-        const
-            //auth_bearer = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA', // Twitter(API 1.1)
-            auth_bearer = 'AAAAAAAAAAAAAAAAAAAAAF7aAAAAAAAASCiRjWvh7R5wxaKkFp7MM%2BhYBqM%3DbQ0JPmjU9F6ZoMhDfI4uTNAaQuTDm2uO9x3WFVr2xBZ2nhjdP0', // TweetDeck(legacy)
-            
-            chrome = ( ( typeof browser != 'undefined' ) && browser.runtime ) ? browser : window.chrome,
-            
-            async_wait = (wait_msec) => {
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        resolve(wait_msec);
-                    }, wait_msec);
-                });
-            },
-            
-            wait_background_ready = (() => {
-                // [メモ] backgroundの処理を(async() => {…})(); に変更(2023/08/07)
-                // →受信準備ができていない場合にエラーになるため、準備できるまで待つ
-                const
-                    wait_msec = 10;
-                let
-                    is_ready = false;
-                
-                return async () => {
-                    /*
-                    //[TODO] 最初だけのチェックだとなぜかその後のsendMessage()でもエラーが発生する場合がある模様
-                    //→暫定的に、常にチェック
-                    //if (is_ready) {
-                    //    return;
-                    //}
-                    */
-                    for (;;) {
-                        try {
-                            const
-                                response = await chrome.runtime.sendMessage({
-                                    type : 'HEALTH_CHECK_REQUEST',
-                                });
-                            if (response?.is_ready) {
-                                log_debug('background is ready', response);
-                                is_ready = true;
-                                break;
-                            }
-                        }
-                        catch (error) {
-                            log_info('sendMessage() error', error);
-                        }
-                        log_debug(`background is not ready => retry after ${wait_msec} msec`);
-                        await async_wait(wait_msec);
-                    }
-                };
-            })(),
-            
-            content_fetch_json = async (url, options) => {
-                try {
-                    const
-                        response = await fetch(url, options);
-                    if (! response.ok) {
-                        throw new Error(`${response.status} ${response.statusText}`);
-                    }
-                    if (response.error) {
-                        throw new Error(response.error);
-                    }
-                    const
-                        response_object = await response.json();
-                    return response_object;
-                }
-                catch (error) {
-                    throw new Error(error);
-                }
-            },
-            
-            background_fetch_json = async (url, options) => {
-                await wait_background_ready();
-                const
-                    response = await chrome.runtime.sendMessage({
-                        type : 'FETCH_JSON_REQUEST',
-                        url,
-                        options,
-                    });
-                if (response.error) {
-                    throw new Error(response.error);
-                }
-                return response.response_object;
-            },
-            
-            fetch_json = is_extension() ? background_fetch_json : content_fetch_json;
-            
-        return async ( tweet_id ) => {
-            const
-                url = `${is_react_page() ? 'https://x.com/i/api' : 'https://api.x.com'}/1.1/statuses/show.json?include_my_retweet=true&include_entities=true&trim_user=false&include_ext_alt_text=true&include_card_uri=true&tweet_mode=extended&id=${encodeURIComponent( tweet_id )}`,
-                options = {
-                    method: 'GET',
-                    headers: {
-                        'authorization' : `Bearer ${auth_bearer}`,
-                        'x-csrf-token' : get_cookie( 'ct0' ),
-                        'x-twitter-active-user' : 'yes',
-                        'x-twitter-auth-type' : 'OAuth2Session',
-                        'x-twitter-client-language' : 'en',
-                    },
-                    mode: 'cors',
-                    credentials : 'include',
-                };
-            
-            try {
-                const
-                    response_object = await fetch_json( url, options );
-                return response_object;
-            }
-            catch ( error ) {
-                throw new Error( error );
-            }
-        };
-    } )();
-
-
 const
     is_valid_image = ( img_url ) => {
         return new Promise( ( resolve, reject ) => {
@@ -1450,10 +1288,10 @@ function download_zip( tweet_info_json ) {
         callback = ( result, is_error ) => {
             if ( ! is_error ) {
                 try {
-                    fullname = result.user.name;
-                    username = result.user.screen_name;
-                    title = result.full_text || result.text;
-                    datetime_string = get_datetime_string_from_timestamp_ms( new Date( result.created_at ).getTime() );
+                    fullname = result.user?.name || fullname;
+                    username = result.user?.screen_name || username;
+                    title = result.full_text || result.text || title;
+                    datetime_string = get_datetime_string_from_timestamp_ms( new Date( result.created_at ).getTime() ) || datetime_string;
                 }
                 catch ( error ) {
                     log_error( 'download_zip() callback() error:', error );
@@ -1462,7 +1300,7 @@ function download_zip( tweet_info_json ) {
             
             if ( fullname && username ) {
                 var media_list = ( result?.media_list || [] ).filter( ( media_info ) => ( media_info.type == 'photo' ) );
-                if ( ( result.quoted_tweet_id ) && ( typeof window?.extension_functions?.get_tweet_info == 'function' ) ) {
+                if ( ( result?.quoted_tweet_id ) && ( typeof window?.extension_functions?.get_tweet_info == 'function' ) ) {
                     const
                         quoted_tweet_info = extension_functions.get_tweet_info( result.quoted_tweet_id );
                     
@@ -1591,58 +1429,13 @@ function download_zip( tweet_info_json ) {
                 callback( result, false );
             }
             else {
-                /*
-                //const
-                //    error_message = 'download_zip() extension_functions.async_get_tweet_info() failure';
-                //callback( {
-                //    error_message,
-                //}, true );
-                */
-                /*
-                //fetch_status( tweet_id )
-                //.then( result => {
-                //    callback( result, false );
-                //} )
-                //.catch( error => {
-                //    log_error( 'download_zip() fetch_status() error:', error );
-                //    callback( error, true );
-                //} );
-                */
                 log_warn( 'download_zip() extension_functions.async_get_tweet_info() failure' );
-                try {
-                    const
-                        result = await fetch_status_json( tweet_id );
-                    callback( result, false );
-                }
-                catch ( error ) {
-                    log_error( 'download_zip() fetch_status_json() error:', error );
-                    callback( error, true );
-                }
+                callback( null, true );
             }
         } )();
     }
     else {
-        /*
-        //fetch_status( tweet_id )
-        //.then( result => {
-        //    callback( result, false );
-        //} )
-        //.catch( error => {
-        //    log_error( 'download_zip() fetch_status() error:', error );
-        //    callback( error, true );
-        //} );
-        */
-        ( async () => {
-            try {
-                const
-                    result = await fetch_status_json( tweet_id );
-                callback( result, false );
-            }
-            catch ( error ) {
-                log_error( 'download_zip() fetch_status_json() error:', error );
-                callback( error, true );
-            }
-        } )();
+        callback( null, true );
     }
     return true;
 } // end of download_zip()
