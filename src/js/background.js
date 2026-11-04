@@ -79,7 +79,7 @@ const
 
     is_twitter_page = ( () => {
         const
-            reg = /https?:\/\/(((mobile|tweetdeck)\.)?twitter\.com|pbs\.twimg\.com)\//;
+            reg = /https?:\/\/(((mobile|tweetdeck)\.)?(?:x|twitter)\.com|pbs\.twimg\.com)\//;
         return ( url ) => {
             if ( ! url ) {
                 return false;
@@ -252,7 +252,7 @@ const
         const
             reg_name_suffix = /:\w*$/,
             reg_normalized_image_url = /^.+\/([^\/.]+)\.(\w+):(\w+)$/,
-            reg_link_url = /^https?:\/\/(?:mobile\.)?twitter\.com\/([^\/]+)\/status(?:es)?\/(\d+)\/photo\/(\d+).*$/;
+            reg_link_url = /^https?:\/\/(?:mobile\.)?(?:x|twitter)\.com\/([^\/]+)\/status(?:es)?\/(\d+)\/photo\/(\d+).*$/;
             
         return ( img_url, link_url ) => {
             if ( ! reg_name_suffix.test( img_url ) ) {
@@ -304,7 +304,7 @@ const
     
     reload_tabs = ( () => {
         const
-            reg_host = /([^.]+\.)?twitter\.com/,
+            reg_host = /([^.]+\.)?(?:x|twitter)\.com/,
             
             reload_tab = async ( tab_info ) => {
                 log_debug( 'reload_tab():', tab_info );
