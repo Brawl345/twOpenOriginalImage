@@ -56,14 +56,6 @@ function get_bool( value ) {
 }  // end of get_bool()
 
 
-function get_int( value ) {
-    if ( isNaN( value ) ) {
-        return null;
-    }
-    return parseInt( value, 10 );
-} // end of get_int()
-
-
 function get_text( value ) {
     if ( value === undefined ) {
         return null;
@@ -190,7 +182,6 @@ var twOpenOriginalImage_chrome_init = ( function() {
         ,   SHOW_IN_TIMELINE : get_bool
         ,   ENABLED_ON_TWEETDECK : get_bool
         ,   DISPLAY_ALL_IN_ONE_PAGE : get_bool
-        ,   DISPLAY_OVERLAY : get_bool
         ,   OVERRIDE_CLICK_EVENT : get_bool
         ,   DISPLAY_ORIGINAL_BUTTONS : get_bool
         ,   OVERRIDE_GALLERY_FOR_TWEETDECK : get_bool
@@ -200,9 +191,6 @@ var twOpenOriginalImage_chrome_init = ( function() {
         ,   TAB_SORTING : get_bool
         ,   SAME_FILENAME_AS_IN_ZIP : get_bool
         ,   OPERATION : get_bool
-        ,   WAIT_AFTER_OPENPAGE : get_int
-        ,   TITLE_PREFIX : get_text
-        ,   TWEET_LINK_TEXT : get_text
         ,   BUTTON_TEXT : get_text
         ,   BUTTON_HELP_DISPLAY_ALL_IN_ONE_PAGE : get_text
         ,   BUTTON_HELP_DISPLAY_ONE_PER_PAGE : get_text

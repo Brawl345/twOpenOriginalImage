@@ -124,7 +124,6 @@ var OPTIONS = {
 ,   SHOW_IN_TIMELINE : true // true: タイムラインで動作
 ,   ENABLED_ON_TWEETDECK : true // true: TweetDeck 上で有効
 ,   DISPLAY_ALL_IN_ONE_PAGE : true // true: [Click] 全ての画像を同一ページで開く / [Alt]+[Click] 画像を個別に開く、false: 左記の逆の動作
-,   DISPLAY_OVERLAY : true // true: 全ての画像を同一ページで開く際に(別タブで開かず)タイムライン上にオーバーレイする
 ,   OVERRIDE_CLICK_EVENT : true // true: ツイート中の画像クリックで原寸画像を開く
 ,   DISPLAY_ORIGINAL_BUTTONS : true // true: [原寸画像]ボタンを表示
 ,   OVERRIDE_GALLERY_FOR_TWEETDECK : true // true: TweetDeck のギャラリー(画像サムネイルクリック時のポップアップ)を置換(OVERRIDE_CLICK_EVENT true 時のみ有効)
@@ -137,8 +136,6 @@ var OPTIONS = {
 
 ,   OPERATION : true // true: 動作中、false: 停止中
 
-,   WAIT_AFTER_OPENPAGE : 500 // Firefox でページを開いた後、画像を挿入するまでのタイムラグ(ms)
-    // TODO: Firefox(Greasemonkey) で window.open() した後 document を書きかえるまでにウェイトをおかないとうまく行かない
 ,   KEYCODE_DISPLAY_IMAGES : 86 // 画像を開くときのキーコード(keydown用)(86=[v])
 ,   KEYCODE_CLOSE_OVERLAY : 27 // 画像を閉じるときのキー(keydown用)(27=[Esc])(※オーバーレイ時のみ)
 ,   HELP_KEYCHAR_DISPLAY_IMAGES : 'v'
@@ -228,8 +225,6 @@ const // 参照: [Firefox のアドオン(content_scripts)でXMLHttpRequestやfe
 
 switch ( LANGUAGE ) {
     case 'ja' :
-        OPTIONS.TITLE_PREFIX = '画像: ';
-        OPTIONS.TWEET_LINK_TEXT = '元ツイート⤴';
         OPTIONS.CLOSE_TEXT = '☒ 閉じる[Esc]';
         OPTIONS.BUTTON_TEXT = '原寸画像';
         OPTIONS.BUTTON_HELP_DISPLAY_ALL_IN_ONE_PAGE = '全ての画像を同一ページで開く';
@@ -250,8 +245,6 @@ switch ( LANGUAGE ) {
         OPTIONS.HELP_OVERLAY_SHORTCUT_BGCOLOR_WHITE = '白';
         break;
     default :
-        OPTIONS.TITLE_PREFIX = 'IMG: ';
-        OPTIONS.TWEET_LINK_TEXT = 'Tweet';
         OPTIONS.CLOSE_TEXT = 'Close [Esc]';
         OPTIONS.BUTTON_TEXT = 'Original';
         OPTIONS.BUTTON_HELP_DISPLAY_ALL_IN_ONE_PAGE = 'Display all in one page';
@@ -1603,7 +1596,6 @@ function initialize( user_options ) {
     
     var add_open_button = ( function () {
         var button_container_classname = SCRIPT_NAME + 'Button',
-            opened_name_map = {},
             top_offset = 26,
             
             MouseClick = {
@@ -3298,100 +3290,8 @@ function initialize( user_options ) {
             image_overlay_drag_scroll.start();
             
         } // end of show_overlay()
-        
-        
-        function open_page( img_urls, tweet_url, title ) {
-            var is_complete = false,
-                child_window_name = '_blank';
-            
-            if ( tweet_url ) {
-                // window名定義 (同一ツイートのページについては、複数開かないようにする)
-                child_window_name = SCRIPT_NAME + '_' + tweet_url.replace(/^.*\/(\d+)$/, '$1' );
-                
-                if ( opened_name_map[ child_window_name ] ) {
-                    opened_name_map[ child_window_name ].close(); // 前面に出すため、同じ名前の window が開いていたら、一度閉じて開きなおす(※ window.focus()ではタブは前面に出てこない)
-                    // TODO: Firefox(Greasemonkey) の場合には、これでも前面に出てこない場合有り(違うタブのタイムラインから、同一ツイートに対して操作した場合等)
-                }
-            }
-            
-            // Firefox: a window opened by the content script itself is cross-origin to it, one opened by the page is not
-            var page_window = w.wrappedJSObject,
-                child_window = ( page_window ? page_window : w ).open( 'about:blank', child_window_name ),
-                child_document;
-            
-            opened_name_map[ child_window_name ] = child_window;
-            
-            function page_onload() {
-                if ( is_complete ) {
-                    return;
-                }
-                
-                try {
-                    child_document = child_window.document;
-                }
-                catch ( error ) {
-                    log_error( 'cannot access document of child-window ', error );
-                    return;
-                }
-                
-                try {
-                    child_document.open();
-                    child_document.write( '<head></head><body></body>' );
-                    child_document.close();
-                }
-                catch ( error ) {
-                    //log_error( error ); // Firefox 43.0.4 (Greasemonkey): SecurityError: The operation is insecure.
-                    // ※ Firefox(Greasemonkey) の場合、child_document.open() が SecurityError となってしまう
-                    //    また、load された時点で、既に '<head></head><body></body>' になっている模様
-                }
-                
-                var head = child_document.querySelector( 'head' ),
-                    body = child_document.querySelector( 'body' ),
-                    title_node = child_document.createElement( 'title' ),
-                    title_text = OPTIONS.TITLE_PREFIX + ( ( title ) ? title : '' );
-                
-                body.style.background = '#f5f8fa';
-                
-                clear_node( title_node );
-                title_node.appendChild( child_document.createTextNode( title_text ) );
-                head.appendChild( title_node );
-                
-                if ( tweet_url ) {
-                    var link = import_node( link_template, child_document ),
-                        header = import_node( header_template, child_document );
-                    
-                    link.href = tweet_url;
-                    link.appendChild( child_document.createTextNode( OPTIONS.TWEET_LINK_TEXT ) );
-                    header.style.cssFloat = 'right';
-                    header.appendChild( link );
-                    body.appendChild( header );
-                }
-                
-                add_images_to_page( img_urls, tweet_url, body, { document : child_document } );
-                
-                child_window.focus();
-                
-                is_complete = true;
-            }
-            
-            if ( is_firefox() && ( ! page_window ) ) {
-                // TODO: Firefox(Greasemonkey) で window.open() した後 document を書きかえるまでにウェイトをおかないとうまく行かない
-                
-                // TODO: ページが load された後でも書き換えがうまくいかない場合がある
-                // - 一瞬書き換え結果の表示がされた後、空の("<head></head><body></body>"だけの)HTMLになったり、titleだけが書き換わった状態になったりする
-                // - 元のページが固まってしまう場合がある
-                // - Firefoxを再起動すると解消されたりと、結果が安定しない
-                setTimeout( function () {
-                    page_onload();
-                }, OPTIONS.WAIT_AFTER_OPENPAGE );
-            }
-            else {
-                page_onload();
-            }
-            
-        } // end of open_page()
-        
-        
+
+
         function add_open_button( tweet ) {
             var tweet_container,
                 gallery,
@@ -3713,12 +3613,7 @@ function initialize( user_options ) {
                         
                         button_loading_container_style.display = 'none';
                         
-                        if ( OPTIONS.DISPLAY_OVERLAY ) {
-                            show_overlay( target_img_urls, tweet_url, title, focused_img_url, tweet, target_all_img_urls );
-                        }
-                        else {
-                            open_page( ( focused_img_url ) ? [ focused_img_url ] : target_img_urls, tweet_url, title );
-                        }
+                        show_overlay( target_img_urls, tweet_url, title, focused_img_url, tweet, target_all_img_urls );
                     } )();
                 }
                 else {
@@ -4679,12 +4574,6 @@ async function init_gm_menu() {
                 default : OPTIONS.DISPLAY_ALL_IN_ONE_PAGE,
             },
             
-            DISPLAY_OVERLAY : {
-                label : messages.DISPLAY_OVERLAY,
-                type : 'checkbox',
-                default : OPTIONS.DISPLAY_OVERLAY,
-            },
-            
             OVERRIDE_CLICK_EVENT : {
                 label : messages.OVERRIDE_CLICK_EVENT,
                 type : 'checkbox',
@@ -4760,11 +4649,7 @@ async function init_gm_menu() {
                 GM_config.fields[ 'DEFAULT_ACTION_ON_CLICK_EVENT' ].node.addEventListener( 'change', event => {
                     GM_config.set( 'DISPLAY_ALL_IN_ONE_PAGE', GM_config.get( 'DEFAULT_ACTION_ON_CLICK_EVENT', true ) == messages.DISPLAY_ALL_IN_ONE_PAGE_DESCRIPTION );
                 }, false );
-                
-                if ( is_firefox() ) {
-                    GM_config.fields[ 'DISPLAY_OVERLAY' ].node.setAttribute( 'disabled', 'disabled' );
-                }
-                
+
                 var config_header = frame_doc.querySelector( `#${config_id}_header` ),
                     header_link = frame_doc.createElement( 'a' ),
                     donation_link = frame_doc.createElement( 'a' );

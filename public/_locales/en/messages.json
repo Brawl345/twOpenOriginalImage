@@ -41,9 +41,6 @@
 ,   "DISPLAY_ONE_PER_PAGE_DESCRIPTION" : {
         "message" : "Display one image per page"
     }
-,   "DISPLAY_OVERLAY" : {
-        "message" : "Overlay"
-    }
 ,   "OVERRIDE_CLICK_EVENT" : {
         "message" : "Display image on click thumbnail of tweet"
     }
@@ -72,7 +69,7 @@
         "message" : "Under suspension"
     }
 ,   "HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY" : {
-        "message" : "Hide download button automatically (on Overlay mode)"
+        "message" : "Hide download button automatically"
     }
 ,   "SUPPRESS_FILENAME_SUFFIX" : {
         "message" : "Suppress suffix (e.g. -orig) of filename"

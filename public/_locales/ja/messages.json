@@ -41,9 +41,6 @@
 ,   "DISPLAY_ONE_PER_PAGE_DESCRIPTION" : {
         "message" : "画像を個別に開く"
     }
-,   "DISPLAY_OVERLAY" : {
-        "message" : "オーバーレイ（タイムラインと同一のタブ上で開く）"
-    }
 ,   "OVERRIDE_CLICK_EVENT" : {
         "message" : "ツイート上のサムネイル画像クリックで開く"
     }
@@ -72,7 +69,7 @@
         "message" : "停止中"
     }
 ,   "HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY" : {
-        "message" : "ダウンロードボタンを自動的に隠す(オーバーレイ時)"
+        "message" : "ダウンロードボタンを自動的に隠す"
     }
 ,   "SUPPRESS_FILENAME_SUFFIX" : {
         "message" : "ファイル名の接尾辞(-orig等)抑制"

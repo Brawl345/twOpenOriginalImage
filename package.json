@@ -32,9 +32,7 @@
     "lint:ext": "npm run build:firefox && web-ext lint --no-config-discovery --self-hosted -s .output/firefox",
     "format": "biome format --fix",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",
-    "test:firefox-window": "web-ext run --no-config-discovery -s tests/firefox-about-blank -t firefox-desktop --start-url https://example.com/?autorun --pref dom.disable_open_during_load=false",
-    "release": "tsx scripts/release.ts"
+    "test:watch": "vitest",    "release": "tsx scripts/release.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.5",

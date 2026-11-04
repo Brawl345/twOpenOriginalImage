@@ -41,9 +41,6 @@
 ,   "DISPLAY_ONE_PER_PAGE_DESCRIPTION" : {
         "message" : "이미지마다 따로 열기"
     }
-,   "DISPLAY_OVERLAY" : {
-        "message" : "오버레이（타임라인과 같은 탭에서 열기）"
-    }
 ,   "OVERRIDE_CLICK_EVENT" : {
         "message" : "썸네일을 클릭하여 열기"
     }
@@ -72,7 +69,7 @@
         "message" : "정지중"
     }
 ,   "HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY" : {
-        "message" : "자동으로 다운로드 버튼 숨기기 (오버레이 모드에서)"
+        "message" : "자동으로 다운로드 버튼 숨기기"
     }
 ,   "SUPPRESS_FILENAME_SUFFIX" : {
         "message" : "파일 이름의 접미사 (예 : -orig)를 표시하지 않습니다"
