@@ -204,10 +204,9 @@ const
     normalize_img_url = ( source_url ) => {
         const
             url_info = get_url_info( source_url ),
-            base_url = url_info.base_url,
-            format = url_info.query_map.format,
+            [ , base_url, format = url_info.query_map.format ] = url_info.base_url.match( /^(.*?)(?:\.(\w+))?$/ ),
             name = url_info.query_map.name;
-        
+
         if ( ! format ) {
             return source_url;
         }

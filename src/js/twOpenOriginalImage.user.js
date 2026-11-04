@@ -766,20 +766,20 @@ function normalize_img_url( source_url ) {
         base_url = url_info.base_url,
         format = url_info.query_map.format,
         name = url_info.query_map.name;
-    
-    if ( ! format ) {
-        return source_url;
-    }
-    
-    if ( [ 'thumb', 'small', 'medium', 'large', 'orig', '900x900' ].indexOf( name ) < 0 ) {
-        name = '';
-    }
-    
+
     if ( base_url.match( /^(.*)\.(\w+)$/ ) ) {
         base_url = RegExp.$1;
         format = RegExp.$2;
     }
-    
+
+    if ( ! format ) {
+        return source_url;
+    }
+
+    if ( [ 'thumb', 'small', 'medium', 'large', 'orig', '900x900' ].indexOf( name ) < 0 ) {
+        name = '';
+    }
+
     return base_url + '.' + format + ( ( name ) ? ':' + name : '' );
 } // end of normalize_img_url()
 
