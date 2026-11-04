@@ -43,8 +43,7 @@ export default defineConfig({
         {
           matches,
           js: [
-            'js/jszip.min.js',
-            'js/FileSaver.min.js',
+            'fflate.js',
             'js/inject_script.js',
             'js/tweet_api.js',
             'js/init.js',

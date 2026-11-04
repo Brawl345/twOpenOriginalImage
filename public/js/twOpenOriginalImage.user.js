@@ -17,8 +17,7 @@
 // @grant           GM_registerMenuCommand
 // @grant           GM_xmlhttpRequest
 // @grant           GM_download
-// @require         https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.min.js
-// @require         https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js
+// @require         https://cdn.jsdelivr.net/npm/fflate@0.8.3/umd/index.js
 // @require         https://cdn.jsdelivr.net/gh/sizzlemctwizzle/GM_config@43fd0fe4de1166f343883511e53546e87840aeaf/gm_config.js
 // @connect         twitter.com
 // @connect         x.com
@@ -46,15 +45,10 @@
     [twitterOpenOriginalImage/LICENSE](https://github.com/hogashi/twitterOpenOriginalImage/blob/master/LICENSE)
 
 ■ 外部ライブラリ
-- [JSZip](https://stuk.github.io/jszip/)
-    Copyright (c) 2009-2014 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
+- [fflate](https://github.com/101arrowz/fflate)
+    Copyright (c) 2026 Arjun Barrett
     The MIT License
-    [jszip/LICENSE.markdown](https://github.com/Stuk/jszip/blob/master/LICENSE.markdown)
-
-- [eligrey/FileSaver.js: An HTML5 saveAs() FileSaver implementation](https://github.com/eligrey/FileSaver.js/)
-    Copyright © 2015 Eli Grey.
-    The MIT License
-    [FileSaver.js/LICENSE.md](https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md)
+    [fflate/LICENSE](https://github.com/101arrowz/fflate/blob/master/LICENSE)
 
 
 - [sizzlemctwizzle/GM_config: A lightweight, reusable, cross-browser graphical settings framework for inclusion in user scripts.](https://github.com/sizzlemctwizzle/GM_config)
@@ -911,14 +905,6 @@ function get_datetime_string_from_timestamp_ms( timestamp_ms ) {
 } // end of get_datetime_string_from_timestamp_ms()
 
 
-// TODO: zip.file() で date オプションを指定した際、ZIP のタイムスタンプがずれてしまう
-// => 暫定対応
-function adjust_date_for_zip( date ) {
-    // TODO: なぜかタイムスタンプに1秒前後の誤差が出てしまう
-    return new Date( date.getTime() - date.getTimezoneOffset() * 60000 );
-} // end of adjust_date_for_zip()
-
-
 function is_tweet_detail_on_react_twitter( tweet ) {
     //return ( tweet.getAttribute( 'data-testid' ) == 'tweetDetail' );
     // ※ [2019.08.07] article[data-testid="tweetDetail"] は無くなり、article[role="article"] に置き換わっている
@@ -1366,43 +1352,24 @@ var create_download_link = ( function () {
 
 
 function save_blob( filename, blob ) {
-    function _save() {
-        var blob_url = URL.createObjectURL( blob ),
-            download_button = d.createElement( 'a' );
-        
-        download_button.href = blob_url;
-        download_button.download = filename;
-        
-        download_button.addEventListener( 'click', ( event ) => {
-            event.stopPropagation(); // イベントハンドラ無効化
-        } );
-        
-        d.documentElement.appendChild( download_button );
-        
-        download_button.click();
-        // TODO: src を画像のURL(https://pbs.twimg.com/media/*)としたIFRAME 内では、なぜかダウンロードではなく、ページ遷移されてしまい、
-        //   その上で、CSPエラーとなってしまう(Chrome 65.0.3325.162)
-        //   Refused to frame '' because it violates the following Content Security Policy directive: "frame-src 'self' https://staticxx.facebook.com https://twitter.com https://*.twimg.com 
-        //     https://5415703.fls.doubleclick.net https://player.vimeo.com https://pay.twitter.com https://www.facebook.com https://ton.twitter.com https://syndication.twitter.com 
-        //     https://vine.co twitter: https://www.youtube.com https://platform.twitter.com https://upload.twitter.com https://s-static.ak.facebook.com https://4337974.fls.doubleclick.net 
-        //     https://8122179.fls.doubleclick.net https://donate.twitter.com".
-        
-        download_button.parentNode.removeChild( download_button );
-    } // end of _save()
-    
-    if ( ( typeof saveAs == 'function' ) && ( ! is_legacy_tweetdeck() ) ) {
-        try {
-            //window.saveAs( blob, filename ); // Firefoxでは saveAs は window 下に存在しない
-            saveAs( blob, filename );
-        }
-        catch ( error ) {
-            //log_error( error );
-            _save();
-        }
-    }
-    else {
-        _save();
-    }
+    var blob_url = URL.createObjectURL( blob ),
+        download_button = d.createElement( 'a' );
+
+    download_button.href = blob_url;
+    download_button.download = filename;
+
+    download_button.addEventListener( 'click', ( event ) => {
+        event.stopPropagation(); // イベントハンドラ無効化
+    } );
+
+    d.documentElement.appendChild( download_button );
+
+    download_button.click();
+    // TODO: src を画像のURL(https://pbs.twimg.com/media/*)としたIFRAME 内では、なぜかダウンロードではなく、ページ遷移されてしまい、
+    //   その上で、CSPエラーとなってしまう(Chrome 65.0.3325.162)
+
+    download_button.parentNode.removeChild( download_button );
+    setTimeout( () => URL.revokeObjectURL( blob_url ), 60000 );
 } // end of save_blob()
 
 
@@ -1460,23 +1427,24 @@ function download_zip( tweet_info_json ) {
         return false;
     }
     
-    var zip = new JSZip(),
+    var zip_files = {},
         filename_prefix = get_filename_prefix(tweet_url);
-    
+
     timestamp_ms = ( timestamp_ms ) ? timestamp_ms : get_timestamp_ms_from_tweet_url( tweet_url );
-    
-    var date = new Date( parseInt( timestamp_ms, 10 ) ),
-        zipdate = adjust_date_for_zip( date ),
+
+    var zipdate = new Date( parseInt( timestamp_ms, 10 ) ),
         datetime_string = get_datetime_string_from_timestamp_ms( timestamp_ms ),
         img_info_dict = {};
-    
+
     if ( filename_prefix == tweet_url ) {
         return false;
     }
-    
-    zip.file( filename_prefix + '.url', '[InternetShortcut]\nURL=' + tweet_url + '\n', {
-        date : zipdate
-    } );
+
+    function add_zip_file( filename, content ) {
+        zip_files[ filename ] = [ ( typeof content == 'string' ) ? fflate.strToU8( content ) : new Uint8Array( content ), { mtime : zipdate } ];
+    }
+
+    add_zip_file( filename_prefix + '.url', '[InternetShortcut]\nURL=' + tweet_url + '\n' );
     
     var tweet_id = get_tweet_id_from_tweet_url( tweet_url ),
         callback = ( result, is_error ) => {
@@ -1516,9 +1484,7 @@ function download_zip( tweet_info_json ) {
                         media_text,
                     ].join( `\n${'-'.repeat(80)}\n` ) + '\n';
                 
-                zip.file( filename_prefix + '.txt', tweet_info_text, {
-                    date : zipdate
-                } );
+                add_zip_file( filename_prefix + '.txt', tweet_info_text );
             }
             
             function add_img_info( img_url, arrayBuffer ) {
@@ -1542,37 +1508,33 @@ function download_zip( tweet_info_json ) {
                     if ( ! img_extension ) {
                         return;
                     }
-                    zip.file( img_filename, img_info.arrayBuffer, {
-                        date : zipdate
-                    } );
+                    add_zip_file( img_filename, img_info.arrayBuffer );
                 } );
-                
-                var zip_content_type = ( is_firefox() ) ? 'base64' : 'blob';
-                    // ※ JSZip 自体は 'base64' 等もサポートしている [generateAsync(options[, onUpdate])](https://stuk.github.io/jszip/documentation/api_jszip/generate_async.html)
-                    // ※ 'base64' の場合、'data:application/zip;base64,' + zip_content でデータ URL を作成できるが、これでダウンロードすると、 Chrome ではセキュリティの警告が出て削除されてしまう
-                    
-                    // TODO: ZIP を保存しようとすると、Firefox でセキュリティ警告が出る場合がある（「このファイルを開くのは危険です」(This file is not commonly downloaded.)）
-                    // → Firefox のみ、Blob URL ではなく、Data URL(Base64) で様子見
-                
-                zip.generateAsync( { type : zip_content_type } ).then( function ( zip_content ) {
-                    var zip_filename = filename_prefix + '.zip';
-                    
-                    if ( zip_content_type == 'base64' ) {
-                        save_base64( zip_filename, zip_content );
+
+                // ※ 'base64' の場合、'data:application/zip;base64,' + zip_content でデータ URL を作成できるが、これでダウンロードすると、 Chrome ではセキュリティの警告が出て削除されてしまう
+                // TODO: ZIP を保存しようとすると、Firefox でセキュリティ警告が出る場合がある（「このファイルを開くのは危険です」(This file is not commonly downloaded.)）
+                // → Firefox のみ、Blob URL ではなく、Data URL(Base64) で様子見
+                try {
+                    var zip_content = fflate.zipSync( zip_files, { level : 0 } ),
+                        zip_filename = filename_prefix + '.zip';
+
+                    if ( is_firefox() ) {
+                        save_base64( zip_filename, zip_content.toBase64() );
                     }
                     else {
-                        save_blob( zip_filename, zip_content );
+                        save_blob( zip_filename, new Blob( [ zip_content ], { type : 'application/zip' } ) );
                     }
-                    
+
                     if ( w.opener && ( w === top ) && ( /^https?:\/\/pbs\.twimg\.com\/media\//.test( w.location.href ) ) ) {
                         // ダウンロード用に開かれた window を閉じる
                         setTimeout( function () {
                             w.close();
                         }, 1000 );
                     }
-                } ).catch( ( error ) => {
-                    log_error( 'add_img_info() zip.generateAsync()', error );
-                } );
+                }
+                catch ( error ) {
+                    log_error( 'add_img_info() fflate.zipSync()', error );
+                }
             } // end of add_img_info()
             
             
@@ -1964,7 +1926,7 @@ function initialize( user_options ) {
         OPTIONS.DOWNLOAD_HELPER_SCRIPT_IS_VALID = false;
     }
     
-    if ( ( typeof JSZip != 'function' ) || is_arraybuffer_bug() ) {
+    if ( ( typeof fflate == 'undefined' ) || ( typeof fflate.zipSync != 'function' ) || is_arraybuffer_bug() ) {
         OPTIONS.DOWNLOAD_ZIP_IS_VALID = false;
     }
     

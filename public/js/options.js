@@ -118,15 +118,24 @@ const
 // → 暫定的に blur イベントで対処
 // TODO: Manifest V3のChromeだとunloadやunloadイベント内のsendMessage()ではService Workerにメッセージが届かない模様
 // → visibilitychangeイベントで代替
-$( window ).on( 'unload blur visibilitychange', async function ( event ) {
+[ 'unload', 'blur', 'visibilitychange' ].forEach( ( event_type ) => window.addEventListener( event_type, async ( event ) => {
     if ( ( event.type == 'visibilitychange' ) && ( document.visibilityState != 'hidden' ) ) {
         return;
     }
     test_event_type = event.type;
     await request_reload_tabs();
-} );
+} ) );
 
-$( async () => {
+const on_ready = ( callback ) => {
+    if ( document.readyState == 'loading' ) {
+        document.addEventListener( 'DOMContentLoaded', callback, { once : true } );
+    }
+    else {
+        callback();
+    }
+};
+
+on_ready( async () => {
     const
         RADIO_KV_LIST = [
             { key : 'ENABLED_ON_TWEETDECK', val : true },
@@ -165,30 +174,29 @@ $( async () => {
         str_kv.val = chrome.i18n.getMessage( str_kv.key );
     } );
     
-    $( '.i18n' ).each( function () {
+    document.querySelectorAll( '.i18n' ).forEach( ( elm ) => {
         const
-            jq_elm = $( this ),
-            value = ( jq_elm.val() ) || ( jq_elm.html() );
-        
+            value = ( elm.value ) || ( elm.textContent );
+
         let
             text = chrome.i18n.getMessage( value );
-        
+
         if ( ! text ) {
             return;
         }
-        if ( ( value == 'OPTIONS' ) && ( jq_elm.parent().prop( 'tagName' ) == 'H1' ) ) {
+        if ( ( value == 'OPTIONS' ) && ( elm.parentElement?.tagName == 'H1' ) ) {
             text += ` ( version ${chrome.runtime.getManifest().version} )`;
         }
-        if ( jq_elm.val() ) {
-            jq_elm.val( text );
+        if ( elm.value ) {
+            elm.value = text;
         }
         else {
-            jq_elm.html( text );
+            elm.textContent = text;
         }
     } );
-    
-    $( 'form' ).submit( function () {
-        return false;
+
+    document.querySelectorAll( 'form' ).forEach( ( form ) => {
+        form.addEventListener( 'submit', ( event ) => event.preventDefault() );
     } );
     
     const
@@ -255,6 +263,34 @@ $( async () => {
             }
             background_window.log_debug( 'reset_context_menu: end', response );
         }, // end of reset_context_menu()
+
+        bind_text_option = ( key, svalue, check_svalue ) => {
+            const
+                target = document.getElementById( key ),
+                input = target?.querySelector( 'input[type="text"]' ),
+                current = target?.querySelector( 'span.current' ),
+                show_value = ( value ) => {
+                    if ( current ) {
+                        current.textContent = value;
+                    }
+                    if ( input ) {
+                        input.value = value;
+                    }
+                };
+
+            show_value( svalue );
+
+            target?.querySelectorAll( 'input[type="button"]' ).forEach( ( button ) => {
+                button.onclick = async () => {
+                    const
+                        next_value = check_svalue( input?.value );
+
+                    await set_value( key, next_value );
+                    value_updated = true;
+                    show_value( next_value );
+                };
+            } );
+        }, // end of bind_text_option()
         
         set_radio_evt = async ( kv ) => {
             const
@@ -269,34 +305,19 @@ $( async () => {
                 },
                 key = kv.key,
                 svalue = check_svalue( kv, await get_value( key ) ),
-                jq_target = $( '#' + key ),
-                jq_inputs = jq_target.find( 'input:radio[name="' + key + '"]' );
-            
-            jq_inputs.unbind( 'change' ).each( function () {
-                const
-                    jq_input = $( this ),
-                    val = jq_input.val();
-                
-                if ( val === svalue ) {
-                    //jq_input.attr( 'checked', 'checked' );
-                    jq_input.prop( 'checked', 'checked' );
-                }
-                else {
-                    //jq_input.attr( 'checked', false );
-                    jq_input.prop( 'checked', false );
-                    // ※ .attr() で変更した場合、ラジオボタンが書き換わらない場合がある(手動変更後に[デフォルトに戻す]を行った場合等)ので、.prop() を使用すること。
-                    //   参考：[jQueryでチェックボックスの全チェック／外しをしようとしてハマッたこと、attr()とprop()の違いは罠レベル | Ultraひみちゅぶろぐ](http://ultrah.zura.org/?p=4450)
-                }
-            } ).change( async function () {
-                const
-                    jq_input = $( this );
-                
-                await set_value( key, check_svalue( kv, jq_input.val() ) );
-                value_updated = true;
-                
-                if ( key == 'DOWNLOAD_HELPER_SCRIPT_IS_VALID' ) {
-                    await reset_context_menu();
-                }
+                target = document.getElementById( key ),
+                inputs = target?.querySelectorAll( `input[type="radio"][name="${key}"]` ) ?? [];
+
+            inputs.forEach( ( input ) => {
+                input.checked = ( input.value === svalue );
+                input.onchange = async () => {
+                    await set_value( key, check_svalue( kv, input.value ) );
+                    value_updated = true;
+
+                    if ( key == 'DOWNLOAD_HELPER_SCRIPT_IS_VALID' ) {
+                        await reset_context_menu();
+                    }
+                };
             } );
         }, // end of set_radio_evt()
         
@@ -316,24 +337,9 @@ $( async () => {
                     return svalue;
                 },
                 key = kv.key,
-                svalue = check_svalue( kv, await get_value( key ) ),
-                jq_target = $( '#' + key ),
-                jq_input = jq_target.find( 'input:text:first' ),
-                jq_current = jq_target.find( 'span.current:first' );
-            
-            jq_current.text( svalue );
-            jq_input.val( svalue );
-            
-            jq_target.find( 'input:button' ).unbind( 'click' ).click( async function () {
-                const
-                    svalue = check_svalue( kv, jq_input.val() );
-                
-                await set_value( key, svalue );
-                value_updated = true;
-                
-                jq_current.text( svalue );
-                jq_input.val( svalue );
-            } );
+                svalue = check_svalue( kv, await get_value( key ) );
+
+            bind_text_option( key, svalue, ( input_value ) => check_svalue( kv, input_value ) );
         }, // end of set_int_evt()
         
         set_str_evt = async ( kv ) => {
@@ -351,29 +357,14 @@ $( async () => {
                     return svalue;
                 },
                 key = kv.key,
-                svalue = check_svalue( kv, await get_value( key ) ),
-                jq_target = $( '#' + key ),
-                jq_input = jq_target.find( 'input:text:first' ),
-                jq_current = jq_target.find( 'span.current:first' );
-            
-            jq_current.text( svalue );
-            jq_input.val( svalue );
-            
-            jq_target.find( 'input:button' ).unbind( 'click' ).click( async function () {
-                const
-                    svalue = check_svalue( kv, jq_input.val() );
-                
-                await set_value( key, svalue );
-                value_updated = true;
-                
-                jq_current.text( svalue );
-                jq_input.val( svalue );
-            } );
+                svalue = check_svalue( kv, await get_value( key ) );
+
+            bind_text_option( key, svalue, ( input_value ) => check_svalue( kv, input_value ) );
         }, // end of set_str_evt()
-        
+
         set_operation_evt = async () => {
             const
-                jq_operation = $( 'input[name="OPERATION"]' );
+                operation_buttons = document.querySelectorAll( 'input[name="OPERATION"]' );
             
             let
                 operation = get_bool( await get_value( 'OPERATION' ) );
@@ -387,17 +378,21 @@ $( async () => {
                         path_to_img = ( is_old_edge() ) ? 'img' : '../img', // TODO: MS-Edge(EdgeHTML) の場合、options.html からの相対パスになっていない（manifest.jsonからの相対パス？）
                         icon_path = ( next_operation ) ? ( path_to_img + '/icon_48.png' ) : ( path_to_img + '/icon_48-gray.png' );
                     
-                    jq_operation.val( button_text );
+                    operation_buttons.forEach( ( button ) => {
+                        button.value = button_text;
+                    } );
                     ( chrome.action || chrome.browserAction ).setIcon( { path : icon_path } );
                     
                     await set_value( 'OPERATION', next_operation );
                     operation = next_operation;
                 };
             
-            jq_operation.unbind( 'click' ).click( async function( event ) {
-                await set_operation( ! operation );
-                value_updated = true;
-                await reset_context_menu();
+            operation_buttons.forEach( ( button ) => {
+                button.onclick = async () => {
+                    await set_operation( ! operation );
+                    value_updated = true;
+                    await reset_context_menu();
+                };
             } );
             
             await set_operation( operation );
@@ -413,8 +408,14 @@ $( async () => {
             }
             if ( is_firefox() ) {
                 // TODO: Firefox 68.0.1 では、別タブ(about:blank)のdocumentにアクセスできないため、変更不可とする
-                $( '#DISPLAY_OVERLAY' ).css( { 'color' : 'gray' } );
-                $( 'input[name="DISPLAY_OVERLAY"]' ).prop("disabled", true);
+                const
+                    display_overlay = document.getElementById( 'DISPLAY_OVERLAY' );
+                if ( display_overlay ) {
+                    display_overlay.style.color = 'gray';
+                }
+                document.querySelectorAll( 'input[name="DISPLAY_OVERLAY"]' ).forEach( ( input ) => {
+                    input.disabled = true;
+                } );
             }
             
             for ( let int_kv of INT_KV_LIST ) {
@@ -431,11 +432,12 @@ $( async () => {
     
     await set_all_evt();
     
-    $( 'input[name="DEFAULT"]' ).click( async function () {
-        await remove_values( OPTION_KEY_LIST );
-        value_updated = true;
-        await set_all_evt();
-        //location.reload();
+    document.querySelectorAll( 'input[name="DEFAULT"]' ).forEach( ( button ) => {
+        button.addEventListener( 'click', async () => {
+            await remove_values( OPTION_KEY_LIST );
+            value_updated = true;
+            await set_all_evt();
+        } );
     } );
 } );
 

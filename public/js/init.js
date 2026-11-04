@@ -668,19 +668,17 @@ chrome.runtime.onMessage.addListener( function ( message, sender, sendResponse )
             .then( ( response ) => response.blob() )
             .then( ( blob ) => {
                 try {
-                    if ( typeof saveAs == 'function' ) {
-                        //window.saveAs( blob, message.filename ); // Firefoxでは saveAs は window 下に存在しない
-                        saveAs( blob, message.filename );
-                    }
-                    else {
-                        var link = document.createElement('a');
-                        
-                        link.href = URL.createObjectURL( blob );
-                        link.download = message.filename;
-                        document.documentElement.appendChild( link );
-                        link.click(); // TweetDeck だと、ダウンロードできない（ダウンロードが無効化されるイベントが設定されてしまう）=> saveAs() が有効ならばそちらを使用
-                        document.documentElement.removeChild( link );
-                    }
+                    const
+                        link = document.createElement( 'a' ),
+                        blob_url = URL.createObjectURL( blob );
+
+                    link.href = blob_url;
+                    link.download = message.filename;
+                    link.addEventListener( 'click', ( event ) => event.stopPropagation() );
+                    document.documentElement.appendChild( link );
+                    link.click();
+                    document.documentElement.removeChild( link );
+                    setTimeout( () => URL.revokeObjectURL( blob_url ), 60000 );
                     sendResponse( {
                         result : 'OK'
                     } );
