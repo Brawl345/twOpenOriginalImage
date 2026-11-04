@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Open extension settings on icon click
+- Always enable download buttons, ZIP download and the "Download original image" context menu
 
 ## v0.1.18
 

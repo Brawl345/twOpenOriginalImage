@@ -144,7 +144,6 @@ on_ready( async () => {
             { key : 'OVERRIDE_CLICK_EVENT', val : true },
             { key : 'DISPLAY_ORIGINAL_BUTTONS', val : true },
             { key : 'OVERRIDE_GALLERY_FOR_TWEETDECK', val : true },
-            { key : 'DOWNLOAD_HELPER_SCRIPT_IS_VALID', val : true },
             { key : 'SWAP_IMAGE_URL', val : false },
             { key : 'HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY', val : true },
             { key : 'SUPPRESS_FILENAME_SUFFIX', val : false },
@@ -313,10 +312,6 @@ on_ready( async () => {
                 input.onchange = async () => {
                     await set_value( key, check_svalue( kv, input.value ) );
                     value_updated = true;
-
-                    if ( key == 'DOWNLOAD_HELPER_SCRIPT_IS_VALID' ) {
-                        await reset_context_menu();
-                    }
                 };
             } );
         }, // end of set_radio_evt()

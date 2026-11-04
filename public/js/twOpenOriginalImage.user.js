@@ -128,7 +128,6 @@ var OPTIONS = {
 ,   OVERRIDE_CLICK_EVENT : true // true: ツイート中の画像クリックで原寸画像を開く
 ,   DISPLAY_ORIGINAL_BUTTONS : true // true: [原寸画像]ボタンを表示
 ,   OVERRIDE_GALLERY_FOR_TWEETDECK : true // true: TweetDeck のギャラリー(画像サムネイルクリック時のポップアップ)を置換(OVERRIDE_CLICK_EVENT true 時のみ有効)
-,   DOWNLOAD_HELPER_SCRIPT_IS_VALID : true // true: ダウンロードヘルパー機能有効
 ,   DOWNLOAD_ZIP_IS_VALID : true // true: ZIPダウンロード有効
 ,   SWAP_IMAGE_URL : false // true: タイムラインの画像を orig 画像と差し替え
 ,   HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY : true // true: ダウンロードボタンを自動的に隠す(オーバーレイ表示時)
@@ -357,15 +356,6 @@ var is_firefox = ( function () {
         return flag;
     };
 } )(); // end of is_firefox()
-
-
-var is_ie = ( function () {
-    var flag = ( !! ( w.navigator.userAgent.toLowerCase().match( /(?:msie|trident)/ ) ) );
-    
-    return function () {
-        return flag;
-    };
-} )(); // end of is_ie()
 
 
 var is_mac = ( function () {
@@ -1446,47 +1436,10 @@ function initialize_download_helper() {
         return false;
     }
     
-    if ( ! OPTIONS.DOWNLOAD_HELPER_SCRIPT_IS_VALID ) {
-        return true;
-    }
-    
     var img_url = w.location.href,
         img_referrer = d.referrer,
-        is_child = /^https?:\/\/(?:tweetdeck\.|mobile\.)?twitter\.com\//.test( img_referrer ),
-        link = ( is_ie() ) ? null : create_download_link( img_url );
-    
-    if ( link && is_child ) {
-        // TODO: 第三者のサイト上であっても、window.name にフォーマットにあった値を設定されてしまうと、指定通りに保存されてしまう
-        // →暫定的に、referrer 確認で対処
-        
-        if (
-            ( is_edge() && ( w.parent !== w ) ) ||
-            // TODO: MS-Edge ＋ Tampermonkey の場合、IFRAME 経由で呼び出すと、window.name の値が読めない
-            // → やむを得ず、IFRAME からの呼び出しであることのみチェック
-            (  w.name == SCRIPT_NAME + '_download_frame' )
-        ) {
-            // 本スクリプトによりダウンロード用 IFRAME 経由で開いた場合
-            d.documentElement.appendChild( link );
-            
-            link.click(); // ダウンロード開始
-            
-            link.parentNode.removeChild( link );
-            
-            return true;
-        }
-        
-        try {
-            var tweet_info_json = decodeURIComponent( w.name );
-            
-            if ( is_child && download_zip( tweet_info_json ) ) {
-                return true;
-            }
-        }
-        catch ( error ) {
-            //log_error( error );
-        }
-    }
-    
+        link = create_download_link( img_url );
+
     if ( d.querySelector( 'form.search-404' ) ) {
         var current_extension = get_img_extension( img_url );
         
@@ -1713,10 +1666,6 @@ function initialize( user_options ) {
     
     if ( is_tweetdeck() && ( ! OPTIONS.ENABLED_ON_TWEETDECK ) ) {
         return;
-    }
-    
-    if ( is_ie() || is_bookmarklet() ) {
-        OPTIONS.DOWNLOAD_HELPER_SCRIPT_IS_VALID = false;
     }
     
     if ( ( typeof fflate == 'undefined' ) || ( typeof fflate.zipSync != 'function' ) || is_arraybuffer_bug() ) {
@@ -2033,24 +1982,6 @@ function initialize( user_options ) {
                 }
                 
                 return download_link_container_template;
-            } )(),
-            
-            download_frame_template = ( function () {
-                var download_frame_template = d.createElement( 'iframe' ),
-                    download_frame_style = download_frame_template.style;
-                
-                download_frame_template.name = SCRIPT_NAME + '_download_frame';
-                download_frame_style.width = '0';
-                download_frame_style.height = '0';
-                download_frame_style.visibility = 'hidden';
-                
-                // TweetDeck で、ダウンロードを行うと下部に隙間ができる（縦スクロールバーが表示されてしまう）不具合への対策
-                download_frame_style.position = 'absolute';
-                download_frame_style.top = '0';
-                download_frame_style.left = '0';
-                download_frame_style.pointerEvents = 'none';
-                
-                return download_frame_template;
             } )(),
             
             image_overlay = ( function () {
@@ -2405,45 +2336,7 @@ function initialize( user_options ) {
                                 ,   timestamp_ms : image_overlay_close_link.getAttribute( 'data-timestamp-ms' )
                                 } );
                             
-                            // TODO: Chrome でも IFRAME 経由の呼び出しが CSP にひっかかるようになってしまった(Chrome 65.0.3325.162)
-                            // ※(srcを画像のURL(https://pbs.twimg.com/media/*)とした)IFRAME内で、a[download]にて Blob URL を指定してダウンロードしようとすると、CSPエラー発生
-                            // →主要ブラウザでは XMLHttpRequest Level 2 対応しているため、直接呼び出し
                             download_zip( tweet_info_json );
-                            
-                            return;
-                            
-                            /*
-                            //if (
-                            //    is_firefox() ||
-                            //    // TODO: Firefox の場合、IFRAME 経由で呼び出すと、ダウンロード用の a#href に blob:～ を入れた時点で CSP に引っかかってしまう
-                            //    // →対策として、cross-domain 対応の GM_xmlhttpRequest を使用し、IFRAME 経由ではなく直接呼び出し
-                            //    is_edge()
-                            //    // TODO: MS-Edge ＋ Tampermonkey の場合、IFRAME 経由で呼び出すと、window.name の値が読めない
-                            //    // → Firefox と同じく、cross-domain 対応の GM_xmlhttpRequest を使用し、IFRAME 経由ではなく直接呼び出し
-                            //) {
-                            //    
-                            //    if ( typeof GM_xmlhttpRequest == 'function' ) {
-                            //        download_zip( tweet_info_json );
-                            //    }
-                            //    else {
-                            //        w.open( img_urls[ 0 ], encodeURIComponent( tweet_info_json ) );
-                            //    }
-                            //    return false;
-                            //}
-                            //
-                            //var old_iframe = d.querySelector( 'iframe#' + SCRIPT_NAME + '_download_zip_frame' ),
-                            //    iframe = import_node( download_frame_template );
-                            //
-                            //
-                            //if ( old_iframe ) {
-                            //    old_iframe.parentNode.removeChild( old_iframe );
-                            //    old_iframe = null;
-                            //}
-                            //iframe.id = SCRIPT_NAME + '_download_zip_frame';
-                            //iframe.name = encodeURIComponent( tweet_info_json );
-                            //iframe.src = img_urls[ 0 ];
-                            //d.documentElement.appendChild( iframe );
-                            */
                         } // end of image_overlay_container_download_image_zip()
                         
                         
@@ -2734,104 +2627,80 @@ function initialize( user_options ) {
             img_urls.forEach( function ( img_url, index ) {
                 var img = import_node( img_template, target_document ),
                     link = import_node( link_template, target_document ),
-                    img_link_container = import_node( img_link_container_template, target_document );
-                
-                if ( OPTIONS.DOWNLOAD_HELPER_SCRIPT_IS_VALID ) {
-                    var download_link = create_download_link( img_url, target_document ),
-                        download_link_container = import_node( download_link_container_template, target_document ),
-                        mouse_click = object_extender( MouseClick ).init( download_link ),
-                        img_filename = ( OPTIONS.SAME_FILENAME_AS_IN_ZIP ) ? ( filename_prefix + '-img' + ( index + 1 ) + '.' + get_img_extension( img_url ) ) : download_link.download;
-                    
-                    download_link.href = img_url;
-                    
-                    if ( is_bookmarklet() ) {
-                        mouse_click.start( function ( event ) {
-                            event.stopPropagation();
-                        } );
-                    }
-                    else {
-                        mouse_click.start( function ( event ) {
-                            event.stopPropagation();
-                            event.preventDefault();
-                            
-                            /*
-                            //var old_iframe = target_document.querySelector( 'iframe[name="' + SCRIPT_NAME + '_download_frame' + '"]' ),
-                            //    iframe = import_node( download_frame_template, target_document );
-                            //
-                            //if ( old_iframe ) {
-                            //    target_document.documentElement.removeChild( old_iframe );
-                            //    old_iframe = null;
-                            //}
-                            //iframe.src = img_url;
-                            //target_document.documentElement.appendChild( iframe );
-                            */
-                            /*
-                            //if ( typeof GM_download == 'function' ) {
-                            //    // TODO: GM_download() だとダウンロード先フォルダが記憶されない(？)
-                            //    GM_download( {
-                            //        url : download_link.href,
-                            //        name : img_filename,
-                            //    } );
-                            //}
-                            */
-                            if ( typeof GM_xmlhttpRequest == 'function' ) {
-                                GM_xmlhttpRequest( {
-                                    method : 'GET',
-                                    url : download_link.href,
-                                    responseType : 'blob',
-                                    onload : function ( response ) {
-                                        save_blob( img_filename, response.response )
-                                    },
-                                    onerror : function ( response ) {
-                                        log_error( 'Download failure:', download_link.href, img_filename, response.status, response.statusText );
-                                        alert( 'Download failure:\n' + download_link.href );
-                                    }
-                                } );
-                            }
-                            else {
-                                fetch( download_link.href )
-                                .then( response => response.blob() )
-                                .then( blob => save_blob( img_filename, blob ) )
-                                .catch( error => {
-                                    log_error( 'Download failure:', download_link.href, img_filename, error );
-                                    alert( 'Download failure:\n' + download_link.href );
-                                });
-                            }
-                            return false;
-                        } );
-                    }
-                    
-                    add_event( download_link, 'remove-mouse-click-event-download', function ( event ) {
-                        mouse_click.stop();
+                    img_link_container = import_node( img_link_container_template, target_document ),
+                    download_link = create_download_link( img_url, target_document ),
+                    download_link_container = import_node( download_link_container_template, target_document ),
+                    mouse_click = object_extender( MouseClick ).init( download_link ),
+                    img_filename = ( OPTIONS.SAME_FILENAME_AS_IN_ZIP ) ? ( filename_prefix + '-img' + ( index + 1 ) + '.' + get_img_extension( img_url ) ) : download_link.download;
+
+                download_link.href = img_url;
+
+                if ( is_bookmarklet() ) {
+                    mouse_click.start( function ( event ) {
+                        event.stopPropagation();
                     } );
-                    
-                    
-                    if ( OPTIONS.HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY ) {
-                        add_event( download_link_container, 'mouseover', function ( event ) {
-                            download_link_container.style.opacity = '1.0';
-                        } );
-                        
-                        add_event( download_link_container, 'mousemove', function ( event ) {
-                            download_link_container.style.opacity = '1.0';
-                        } );
-                        
-                        add_event( download_link_container, 'mouseout', function ( event ) {
-                            download_link_container.style.opacity = '0';
-                        } );
-                        
-                        object_extender( MouseClick ).init( download_link_container ).start( function ( event ) {
-                            event.stopPropagation();
-                            event.preventDefault();
-                            return false;
-                        } );
-                        
-                        download_link_container.style.opacity = '0';
-                    }
-                    
-                    download_link_container.appendChild( download_link );
-                    img_link_container.appendChild( download_link_container );
                 }
-                
+                else {
+                    mouse_click.start( function ( event ) {
+                        event.stopPropagation();
+                        event.preventDefault();
+
+                        if ( typeof GM_xmlhttpRequest == 'function' ) {
+                            GM_xmlhttpRequest( {
+                                method : 'GET',
+                                url : download_link.href,
+                                responseType : 'blob',
+                                onload : function ( response ) {
+                                    save_blob( img_filename, response.response )
+                                },
+                                onerror : function ( response ) {
+                                    log_error( 'Download failure:', download_link.href, img_filename, response.status, response.statusText );
+                                    alert( 'Download failure:\n' + download_link.href );
+                                }
+                            } );
+                        }
+                        else {
+                            fetch( download_link.href )
+                            .then( response => response.blob() )
+                            .then( blob => save_blob( img_filename, blob ) )
+                            .catch( error => {
+                                log_error( 'Download failure:', download_link.href, img_filename, error );
+                                alert( 'Download failure:\n' + download_link.href );
+                            });
+                        }
+                        return false;
+                    } );
+                }
+
+                add_event( download_link, 'remove-mouse-click-event-download', function ( event ) {
+                    mouse_click.stop();
+                } );
+
+                if ( OPTIONS.HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY ) {
+                    add_event( download_link_container, 'mouseover', function ( event ) {
+                        download_link_container.style.opacity = '1.0';
+                    } );
+
+                    add_event( download_link_container, 'mousemove', function ( event ) {
+                        download_link_container.style.opacity = '1.0';
+                    } );
+
+                    add_event( download_link_container, 'mouseout', function ( event ) {
+                        download_link_container.style.opacity = '0';
+                    } );
+
+                    object_extender( MouseClick ).init( download_link_container ).start( function ( event ) {
+                        event.stopPropagation();
+                        event.preventDefault();
+                        return false;
+                    } );
+
+                    download_link_container.style.opacity = '0';
+                }
+
+                download_link_container.appendChild( download_link );
+                img_link_container.appendChild( download_link_container );
+
                 img.className = 'original-image';
                 
                 remaining_images_counter ++;
@@ -3114,7 +2983,7 @@ function initialize( user_options ) {
                 image_overlay_shortcut_help.appendChild( help_move_previous );
             }
             
-            if ( OPTIONS.DOWNLOAD_HELPER_SCRIPT_IS_VALID && tweet_url ) {
+            if ( tweet_url ) {
                 var help_download = import_node( help_item_template );
                 
                 help_download.classList.add( 'help-download' );
@@ -3132,7 +3001,7 @@ function initialize( user_options ) {
                 image_overlay_shortcut_help.appendChild( help_download );
             }
             
-            if ( OPTIONS.DOWNLOAD_HELPER_SCRIPT_IS_VALID && OPTIONS.DOWNLOAD_ZIP_IS_VALID && tweet_url ) {
+            if ( OPTIONS.DOWNLOAD_ZIP_IS_VALID && tweet_url ) {
                 var help_download_zip = import_node( help_item_template );
                 
                 help_download_zip.classList.add( 'help-download-zip' );
@@ -5009,12 +4878,6 @@ async function init_gm_menu() {
                 label : messages.OVERRIDE_GALLERY_FOR_TWEETDECK,
                 type : 'checkbox',
                 default : OPTIONS.OVERRIDE_GALLERY_FOR_TWEETDECK,
-            },
-            
-            DOWNLOAD_HELPER_SCRIPT_IS_VALID : {
-                label : messages.DOWNLOAD_HELPER_IS_VALID_HEADER,
-                type : 'checkbox',
-                default : OPTIONS.DOWNLOAD_HELPER_SCRIPT_IS_VALID,
             },
             
             HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY : {

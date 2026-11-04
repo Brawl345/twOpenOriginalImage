@@ -59,9 +59,6 @@
 ,   "BUTTON_TEXT" : {
         "message" : "原寸画像"
     }
-,   "DOWNLOAD_HELPER_IS_VALID_HEADER" : {
-        "message" : "画像ダウンロードヘルパー"
-    }
 ,   "ENABLED_ON_TWEETDECK" : {
         "message" : "TweetDeck での動作"
     }

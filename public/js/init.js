@@ -216,7 +216,6 @@ var twOpenOriginalImage_chrome_init = ( function() {
         ,   OVERRIDE_CLICK_EVENT : get_bool
         ,   DISPLAY_ORIGINAL_BUTTONS : get_bool
         ,   OVERRIDE_GALLERY_FOR_TWEETDECK : get_bool
-        ,   DOWNLOAD_HELPER_SCRIPT_IS_VALID : get_bool
         ,   SWAP_IMAGE_URL : get_bool
         ,   HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY : get_bool
         ,   SUPPRESS_FILENAME_SUFFIX : get_bool
