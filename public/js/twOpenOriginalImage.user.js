@@ -1362,21 +1362,22 @@ function initialize_download_helper() {
         img_referrer = d.referrer,
         link = create_download_link( img_url );
 
-    if ( d.querySelector( 'form.search-404' ) ) {
-        var current_extension = get_img_extension( img_url );
-        
-        if ( ! current_extension ) {
+    // pbs.twimg.com answers a wrong file extension with an empty 404 page
+    if ( ! d.querySelector( 'img' ) ) {
+        if ( ! get_img_extension( img_url ) ) {
             return;
         }
+        const
+            formatted_img_url = get_img_url( img_url, get_img_kind( img_url ) );
 
         ( async () => {
             const
-                valid_img_url = await find_valid_img_url( img_url );
-            
-            if ( valid_img_url != img_url ) {
+                valid_img_url = await find_valid_img_url( formatted_img_url );
+
+            if ( valid_img_url != formatted_img_url ) {
                 w.location.replace( valid_img_url );
             }
-        } );
+        } )();
         return;
     }
     

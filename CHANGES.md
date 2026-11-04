@@ -6,6 +6,7 @@
 - Always enable download buttons, ZIP download and the "Download original image" context menu
 - Allow turning off the overlay in Firefox
 - Reload X tabs only when a setting actually changed
+- Redirect `pbs.twimg.com/media/…` URLs with a wrong file extension to the existing image
 
 ## v0.1.18
 
