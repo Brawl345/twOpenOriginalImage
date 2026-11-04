@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Open extension settings on icon click
+
 ## v0.1.18
 
 - Use Manifest V3 in Firefox

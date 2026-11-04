@@ -72,7 +72,6 @@ export default defineConfig({
       action: {
         default_icon: 'img/icon_48.png',
         default_title: '__MSG_ext_title__',
-        default_popup: 'html/options.html',
       },
       ...(updates && browser === 'chrome'
         ? { update_url: `${updateBase}/updates.xml` }
