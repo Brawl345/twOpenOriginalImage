@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.20
+
+- Fix >4 image support with conflicting browser extensions (such as Control Panel for Twitter)
+
 ## v0.1.19
 
 - Open extension settings on icon click

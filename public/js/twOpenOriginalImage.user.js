@@ -3418,7 +3418,27 @@ function initialize( user_options ) {
                 
                 return img_urls;
             } // end of get_img_urls()
-            
+
+
+            function complete_img_urls( img_urls ) {
+                if ( ( ! is_react_page() ) || ( typeof window?.extension_functions?.get_tweet_info != 'function' ) ) {
+                    return img_urls.slice( 0 );
+                }
+
+                var tweet_link = get_tweet_link_on_react_twitter( tweet ) || tweet.querySelector( 'a[role="link"][href*="/status/"][href$="/photo/1"]' ),
+                    tweet_id = tweet_link && get_tweet_id_from_tweet_url( tweet_link.href ),
+                    tweet_info = tweet_id && extension_functions.get_tweet_info( tweet_id ),
+                    photo_urls = ( tweet_info?.media_list ?? [] ).filter( ( media_info ) => ( media_info.type == 'photo' ) ).map( ( media_info ) => get_img_url_orig( media_info.media_url_https ) ),
+                    get_media_id = ( img_url ) => ( img_url.match( /\/media\/([^.?:\/]+)/ ) ?? [] )[ 1 ],
+                    known_media_ids = new Set( img_urls.map( get_media_id ) ),
+                    photo_media_ids = new Set( photo_urls.map( get_media_id ) );
+
+                if ( photo_urls.every( ( photo_url ) => known_media_ids.has( get_media_id( photo_url ) ) ) ) {
+                    return img_urls.slice( 0 );
+                }
+                return photo_urls.concat( img_urls.filter( ( img_url ) => ! photo_media_ids.has( get_media_id( img_url ) ) ) );
+            } // end of complete_img_urls()
+
             
             tweet_container = ( is_legacy_tweetdeck() ) ? search_ancestor( tweet, [ 'js-stream-item' ] ) : null;
             if ( ! tweet_container ) {
@@ -3548,8 +3568,8 @@ function initialize( user_options ) {
                 
                 let
                     focused_img_url = button.getAttribute( 'data-target-img-url' ),
-                    target_img_urls = img_urls.slice( 0 ),
-                    target_all_img_urls = all_img_urls.slice( 0 );
+                    target_img_urls = complete_img_urls( img_urls ),
+                    target_all_img_urls = complete_img_urls( all_img_urls );
                 
                 button_loading_container_style.display = 'block';
                 
