@@ -31,7 +31,7 @@ export default defineConfig({
       name: '__MSG_ext_title__',
       short_name: '__MSG_ext_short_name__',
       description: '__MSG_ext_description__',
-      author: 'furyu',
+      author: 'furyu, Brawl345',
       default_locale: 'en',
       icons: {
         16: 'img/icon_16.png',
