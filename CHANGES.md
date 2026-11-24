@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.21
+
+- Heavily improve performance while loading modal
+
 ## v0.1.20
 
 - Fix >4 image support with conflicting browser extensions (such as Control Panel for Twitter)

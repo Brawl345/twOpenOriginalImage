@@ -759,6 +759,11 @@ function get_img_url_orig( img_url ) {
 } // end of get_img_url_orig()
 
 
+function get_media_id( img_url ) {
+    return ( img_url.match( /\/media\/([^.?:\/]+)/ ) ?? [] )[ 1 ];
+} // end of get_media_id()
+
+
 function get_img_filename( img_url ) {
     img_url = normalize_img_url( img_url );
     
@@ -866,6 +871,35 @@ function get_text_from_element( element ) {
 
 
 const
+    img_extension_list = [ 'jpg', 'png', 'gif', 'webp' ],
+
+    replace_img_extension = ( img_url, from_extension, to_extension ) => {
+        if ( /[?&]format=/.test( img_url ) ) {
+            return img_url.replace( `format=${from_extension}`, `format=${to_extension}` );
+        }
+        return img_url.replace( `.${from_extension}`, `.${to_extension}` );
+    },
+
+    // format=webp has no name=orig
+    get_orig_capable_img_url = ( img_url ) => {
+        if ( ( ! img_url ) || ( get_img_extension( img_url, img_extension_list ) != 'webp' ) ) {
+            return img_url;
+        }
+        return replace_img_extension( img_url, 'webp', 'jpg' );
+    },
+
+    get_alternative_img_url = ( img_url, tried_extensions ) => {
+        const
+            current_extension = get_img_extension( img_url, img_extension_list );
+        if ( ! current_extension ) {
+            return null;
+        }
+        tried_extensions.add( current_extension );
+        const
+            next_extension = img_extension_list.find( ( extension ) => ! tried_extensions.has( extension ) );
+        return ( next_extension ) ? replace_img_extension( img_url, current_extension, next_extension ) : null;
+    },
+
     is_valid_image = ( img_url ) => {
         return new Promise( ( resolve, reject ) => {
             const
@@ -889,24 +923,15 @@ const
     
     find_valid_img_url = ( () => {
         const
-            img_url_replace_map = {},
-            extension_list = [ 'jpg', 'png', 'gif', 'webp' ];
-        
+            img_url_replace_map = {};
+
         return async ( source_img_url ) => {
-            if ( ! source_img_url ) {
+            if ( ( ! source_img_url ) || ( ! get_img_extension( source_img_url, img_extension_list ) ) ) {
                 return source_img_url;
             }
-            let
-                current_extension = get_img_extension( source_img_url, extension_list );
-            if ( ! current_extension ) {
-                return source_img_url;
-            }
-            if ( current_extension == 'webp' ) {
-                // format=webpにはname=origが存在しないため、ひとまずformat=jpgに置換
-                current_extension = 'jpg';
-                source_img_url = source_img_url.replace( 'format=webp', `format=${current_extension}` );
-            }
+            source_img_url = get_orig_capable_img_url( source_img_url );
             const
+                current_extension = get_img_extension( source_img_url, img_extension_list ),
                 valid_img_url = img_url_replace_map[ source_img_url ];
             if ( valid_img_url ) {
                 return valid_img_url;
@@ -915,12 +940,12 @@ const
                 img_url_replace_map[ source_img_url ] = source_img_url;
                 return source_img_url;
             }
-            for ( const extension of extension_list ) {
+            for ( const extension of img_extension_list ) {
                 if ( extension == current_extension ) {
                     continue;
                 }
                 const
-                    try_img_url = source_img_url.replace( `format=${current_extension}`, `format=${extension}` );
+                    try_img_url = replace_img_extension( source_img_url, current_extension, extension );
                 if ( await is_valid_image( try_img_url ) ) {
                     img_url_replace_map[ source_img_url ] = try_img_url;
                     return try_img_url;
@@ -2209,22 +2234,22 @@ function initialize( user_options ) {
                         } // end of image_overlay_container_download_current_image()
                         
                         
-                        function image_overlay_container_download_image_zip() {
+                        async function image_overlay_container_download_image_zip() {
                             var tweet_url = image_overlay_close_link.href,
-                                //img_urls = to_array( image_overlay_container.querySelectorAll( '.image-link-container .download-link' ) ).map( function ( download_link ) {
-                                //    return download_link.href;
-                                //} ),
-                                img_urls = JSON.parse( decodeURIComponent( image_overlay_close_link.getAttribute( 'data-all-img-urls' ) ) ),
-                                tweet_info_json = JSON.stringify( {
-                                    url : tweet_url
-                                ,   img_urls : img_urls
-                                ,   title : image_overlay_close_link.title
-                                ,   fullname : image_overlay_close_link.getAttribute( 'data-fullname' )
-                                ,   username : image_overlay_close_link.getAttribute( 'data-username' )
-                                ,   timestamp_ms : image_overlay_close_link.getAttribute( 'data-timestamp-ms' )
-                                } );
-                            
-                            download_zip( tweet_info_json );
+                                title = image_overlay_close_link.title,
+                                fullname = image_overlay_close_link.getAttribute( 'data-fullname' ),
+                                username = image_overlay_close_link.getAttribute( 'data-username' ),
+                                timestamp_ms = image_overlay_close_link.getAttribute( 'data-timestamp-ms' ),
+                                img_urls = await Promise.all( JSON.parse( decodeURIComponent( image_overlay_close_link.getAttribute( 'data-all-img-urls' ) ) ).map( find_valid_img_url ) );
+
+                            download_zip( JSON.stringify( {
+                                url : tweet_url
+                            ,   img_urls : img_urls
+                            ,   title : title
+                            ,   fullname : fullname
+                            ,   username : username
+                            ,   timestamp_ms : timestamp_ms
+                            } ) );
                         } // end of image_overlay_container_download_image_zip()
                         
                         
@@ -2343,11 +2368,10 @@ function initialize( user_options ) {
                     
                     image_overlay_loading = ( function () {
                         var image_overlay_loading = d.createElement( 'div' ),
-                            image_overlay_loading_style = image_overlay_loading.style,
-                            loading = d.createElement( 'img' ),
-                            loading_style = loading.style;
-                        
+                            image_overlay_loading_style = image_overlay_loading.style;
+
                         image_overlay_loading.id = SCRIPT_NAME + '_image_overlay_loading';
+                        image_overlay_loading.className = SCRIPT_NAME + '_spinner';
                         image_overlay_loading_style.display = 'none';
                         image_overlay_loading_style.pointerEvents = 'none';
                         image_overlay_loading_style.position = 'fixed';
@@ -2357,18 +2381,7 @@ function initialize( user_options ) {
                         image_overlay_loading_style.left = 0;
                         image_overlay_loading_style.zIndex = 10010;
                         image_overlay_loading_style.background = 'rgba( 255, 255, 255, 0.8 )';
-                        
-                        loading.src = 'https://abs.twimg.com/a/1460504487/img/t1/spinner-rosetta-gray-32x32.gif';
-                        loading_style.position = 'absolute';
-                        loading_style.top = 0;
-                        loading_style.right = 0;
-                        loading_style.bottom = 0;
-                        loading_style.left = 0;
-                        loading_style.margin = 'auto';
-                        loading_style.opacity = 0.8;
-                        
-                        image_overlay_loading.appendChild( loading );
-                        
+
                         d.body.appendChild( image_overlay_loading );
                         
                         return image_overlay_loading;
@@ -2503,15 +2516,18 @@ function initialize( user_options ) {
             }
             var target_document = options.document,
                 callback = options.callback,
+                on_image_loaded = options.on_image_loaded,
+                img_sizes = options.img_sizes || {},
                 start_img_url = options.start_img_url;
-            
+
             if ( ! target_document ) {
                 target_document = d;
             }
-            
-            var remaining_images_counter = 0,
+
+            var start_index = Math.max( img_urls.indexOf( start_img_url ), 0 ),
+                remaining_images_counter = start_index + 1,
                 filename_prefix = get_filename_prefix( tweet_url );
-            
+
             img_urls.forEach( function ( img_url, index ) {
                 var img = import_node( img_template, target_document ),
                     link = import_node( link_template, target_document ),
@@ -2519,7 +2535,8 @@ function initialize( user_options ) {
                     download_link = create_download_link( img_url, target_document ),
                     download_link_container = import_node( download_link_container_template, target_document ),
                     mouse_click = object_extender( MouseClick ).init( download_link ),
-                    img_filename = ( OPTIONS.SAME_FILENAME_AS_IN_ZIP ) ? ( filename_prefix + '-img' + ( index + 1 ) + '.' + get_img_extension( img_url ) ) : download_link.download;
+                    tried_extensions = new Set(),
+                    get_img_filename_for_download = () => ( OPTIONS.SAME_FILENAME_AS_IN_ZIP ) ? ( filename_prefix + '-img' + ( index + 1 ) + '.' + get_img_extension( download_link.href ) ) : download_link.download;
 
                 download_link.href = img_url;
 
@@ -2532,6 +2549,8 @@ function initialize( user_options ) {
                     mouse_click.start( function ( event ) {
                         event.stopPropagation();
                         event.preventDefault();
+
+                        var img_filename = get_img_filename_for_download();
 
                         if ( typeof GM_xmlhttpRequest == 'function' ) {
                             GM_xmlhttpRequest( {
@@ -2591,29 +2610,60 @@ function initialize( user_options ) {
 
                 img.className = 'original-image';
                 
-                remaining_images_counter ++;
-                
-                function check_loaded_image( event ) {
-                    img.setAttribute( 'width', img.naturalWidth );
-                    img.setAttribute( 'height', img.naturalHeight );
-                    
+                var real_img = new Image(),
+                    placeholder_size = img_sizes[ get_media_id( img_url ) ],
+                    is_ready = false;
+
+                function mark_ready() {
+                    if ( is_ready ) {
+                        return;
+                    }
+                    is_ready = true;
+                    if ( start_index < index ) {
+                        return;
+                    }
                     remaining_images_counter --;
                     if ( remaining_images_counter <= 0 && typeof callback == 'function' ) {
                         callback();
                     }
-                } // end of check_loaded_image()
-                
-                add_event( img, 'load', check_loaded_image );
-                add_event( img, 'error', function ( event ) {
-                    if ( /\.jpg/.test( img.src ) ) {
-                        img.src = img.src.replace( /\.jpg/, '.png' );
+                } // end of mark_ready()
+
+                add_event( img, 'load', function ( event ) {
+                    img.setAttribute( 'width', img.naturalWidth );
+                    img.setAttribute( 'height', img.naturalHeight );
+
+                    if ( img.src == real_img.src ) {
+                        img_link_container.classList.remove( 'loading' );
+                    }
+                    if ( ! is_ready ) {
+                        mark_ready();
+                    }
+                    else if ( typeof on_image_loaded == 'function' ) {
+                        on_image_loaded();
+                    }
+                } );
+                add_event( img, 'error', mark_ready );
+
+                add_event( real_img, 'load', function ( event ) {
+                    img.src = real_img.src;
+                } );
+                add_event( real_img, 'error', function ( event ) {
+                    var alternative_img_url = get_alternative_img_url( real_img.src, tried_extensions );
+
+                    if ( alternative_img_url ) {
+                        real_img.src = download_link.href = alternative_img_url;
+                        download_link.download = get_img_filename( alternative_img_url );
                         return;
                     }
-                    check_loaded_image( event );
-                });
-                
-                //img.src = link.href = img_url;
-                img.src = img_url;
+                    img_link_container.classList.remove( 'loading' );
+                    mark_ready();
+                } );
+
+                img_link_container.classList.add( 'loading' );
+                if ( placeholder_size ) {
+                    img.src = 'data:image/svg+xml,' + encodeURIComponent( '<svg xmlns="http://www.w3.org/2000/svg" width="' + placeholder_size.width + '" height="' + placeholder_size.height + '"/>' );
+                }
+                real_img.src = img_url;
                 link.href = ( OPTIONS.SAME_FILENAME_AS_IN_ZIP && tweet_url ) ? ( tweet_url + '/photo/' + ( index + 1 ) ) : img_url;
                 
                 link.className = 'image-link';
@@ -2644,7 +2694,7 @@ function initialize( user_options ) {
         } // end of update_overlay_status()
         
         
-        function show_overlay( img_urls, tweet_url, title, start_img_url, tweet, all_img_urls ) {
+        function show_overlay( img_urls, tweet_url, title, start_img_url, tweet, all_img_urls, img_sizes ) {
             if ( image_overlay_container.style.display != 'none' ) {
                 //log_error( 'show_overlay(): duplicate called' );
                 // TODO: 重複して呼ばれるケース(不正な動作)に対するガード
@@ -2821,12 +2871,19 @@ function initialize( user_options ) {
             
             add_images_to_page( img_urls, tweet_url, image_overlay_image_container, {
                 start_img_url : start_img_url
+            ,   img_sizes : img_sizes
             ,   callback : function () {
                     if ( image_overlay_container.style.display == 'none' ) {
                         return;
                     }
                     image_overlay_loading_style.display = 'none';
                     fire_event( image_overlay_container, 'image-init' );
+                }
+            ,   on_image_loaded : function () {
+                    if ( image_overlay_container.style.display == 'none' ) {
+                        return;
+                    }
+                    fire_event( image_overlay_container, 'image-refit' );
                 }
             } );
             
@@ -2938,7 +2995,33 @@ function initialize( user_options ) {
                 
                 remove_event( image_overlay_container, 'image-fit-height' );
                 remove_event( image_overlay_container, 'image-fit-window' );
-                
+                remove_event( image_overlay_container, 'image-refit' );
+
+                add_event( image_overlay_container, 'image-refit', function ( event ) {
+                    if ( first_event ) {
+                        return false;
+                    }
+                    switch ( image_size ) {
+                        case 'full' :
+                            var width_max = Math.max( 0, ... to_array( image_overlay_image_container.querySelectorAll( 'img.original-image' ) ).map( ( img ) => img.naturalWidth ) );
+
+                            to_array( image_overlay_image_container.querySelectorAll( '.image-link-container' ) ).forEach( function ( image_link_container ) {
+                                image_link_container.style.width = width_max + 'px';
+                            } );
+                            break;
+
+                        case 'fit-height' :
+                            fire_event( image_overlay_container, 'image-fit-height' );
+                            break;
+
+                        case 'fit-window' :
+                            fire_event( image_overlay_container, 'image-fit-window' );
+                            break;
+                    }
+                    adjust_last_image_link_container();
+                    return false;
+                }, true );
+
                 add_event( image_overlay_container, 'image-fit-height', function ( event ) {
                     if ( image_size != 'fit-height' ) {
                         return false;
@@ -3420,16 +3503,43 @@ function initialize( user_options ) {
             } // end of get_img_urls()
 
 
-            function complete_img_urls( img_urls ) {
+            function get_tweet_info_of_tweet() {
                 if ( ( ! is_react_page() ) || ( typeof window?.extension_functions?.get_tweet_info != 'function' ) ) {
-                    return img_urls.slice( 0 );
+                    return null;
                 }
 
                 var tweet_link = get_tweet_link_on_react_twitter( tweet ) || tweet.querySelector( 'a[role="link"][href*="/status/"][href$="/photo/1"]' ),
-                    tweet_id = tweet_link && get_tweet_id_from_tweet_url( tweet_link.href ),
-                    tweet_info = tweet_id && extension_functions.get_tweet_info( tweet_id ),
-                    photo_urls = ( tweet_info?.media_list ?? [] ).filter( ( media_info ) => ( media_info.type == 'photo' ) ).map( ( media_info ) => get_img_url_orig( media_info.media_url_https ) ),
-                    get_media_id = ( img_url ) => ( img_url.match( /\/media\/([^.?:\/]+)/ ) ?? [] )[ 1 ],
+                    tweet_id = tweet_link && get_tweet_id_from_tweet_url( tweet_link.href );
+
+                return ( tweet_id && extension_functions.get_tweet_info( tweet_id ) ) || null;
+            } // end of get_tweet_info_of_tweet()
+
+
+            function get_photo_sizes() {
+                var tweet_info = get_tweet_info_of_tweet(),
+                    quoted_tweet_info = tweet_info?.quoted_tweet_id && extension_functions.get_tweet_info( tweet_info.quoted_tweet_id ),
+                    photo_sizes = {};
+
+                ( tweet_info?.media_list ?? [] ).concat( quoted_tweet_info?.media_list ?? [] ).forEach( ( media_info ) => {
+                    var width = media_info?.original_info?.width,
+                        height = media_info?.original_info?.height;
+
+                    if ( ( media_info.type == 'photo' ) && ( 0 < width ) && ( 0 < height ) ) {
+                        photo_sizes[ get_media_id( media_info.media_url_https ) ] = { width, height };
+                    }
+                } );
+                return photo_sizes;
+            } // end of get_photo_sizes()
+
+
+            function complete_img_urls( img_urls ) {
+                var tweet_info = get_tweet_info_of_tweet();
+
+                if ( ! tweet_info ) {
+                    return img_urls.slice( 0 );
+                }
+
+                var photo_urls = ( tweet_info.media_list ?? [] ).filter( ( media_info ) => ( media_info.type == 'photo' ) ).map( ( media_info ) => get_img_url_orig( media_info.media_url_https ) ),
                     known_media_ids = new Set( img_urls.map( get_media_id ) ),
                     photo_media_ids = new Set( photo_urls.map( get_media_id ) );
 
@@ -3579,17 +3689,10 @@ function initialize( user_options ) {
                 button.removeAttribute( 'data-event-shift-key' );
                 
                 if ( OPTIONS.DISPLAY_ALL_IN_ONE_PAGE ^ alt_key_pushed ) {
-                    ( async () => {
-                        if ( focused_img_url ) {
-                            focused_img_url = await find_valid_img_url( focused_img_url );
-                        }
-                        for ( let ci = 0; ci < target_img_urls.length; ci ++ ) {
-                            target_img_urls[ ci ] = await find_valid_img_url( target_img_urls[ ci ] );
-                        }
-                        for ( let ci = 0; ci < target_all_img_urls.length; ci ++ ) {
-                            target_all_img_urls[ ci ] = await find_valid_img_url( target_all_img_urls[ ci ] );
-                        }
-                        
+                    ( () => {
+                        focused_img_url = get_orig_capable_img_url( focused_img_url );
+                        target_img_urls = target_img_urls.map( get_orig_capable_img_url );
+
                         var tweet_link,
                             tweet_url,
                             tweet_text,
@@ -3632,7 +3735,7 @@ function initialize( user_options ) {
                         
                         button_loading_container_style.display = 'none';
                         
-                        show_overlay( target_img_urls, tweet_url, title, focused_img_url, tweet, target_all_img_urls );
+                        show_overlay( target_img_urls, tweet_url, title, focused_img_url, tweet, target_all_img_urls, get_photo_sizes() );
                     } )();
                 }
                 else {
@@ -4388,8 +4491,11 @@ function initialize( user_options ) {
     
     function set_user_css() {
         var button_selector = '.' + SCRIPT_NAME + 'Button button.btn',
+            spinner_selector = '.' + SCRIPT_NAME + '_spinner::after, #' + SCRIPT_NAME + '_image_overlay_container .image-link-container.loading::after',
             css_rule_lines = [
-                button_selector + '{padding:2px 6px; font-weight:normal; min-height:16px; white-space:nowrap;}'
+                button_selector + '{padding:2px 6px; font-weight:normal; min-height:16px; white-space:nowrap;}',
+                '@keyframes ' + SCRIPT_NAME + '_spin {to {transform: rotate(360deg);}}',
+                spinner_selector + '{content: ""; position: absolute; top: min(50%, 50vh); left: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; box-sizing: border-box; border: 4px solid rgba(128, 128, 128, 0.3); border-top-color: rgb(29, 155, 240); border-radius: 50%; pointer-events: none; animation: ' + SCRIPT_NAME + '_spin 0.8s linear infinite;}'
             ];
         
         if ( is_react_tweetdeck() ) {
