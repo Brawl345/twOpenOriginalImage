@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.1
 
 - Ask for host permissions when they're missing due to updated ones
 

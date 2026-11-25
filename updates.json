@@ -3,9 +3,9 @@
     "twopenoriginalimage@brawl345.github.com": {
       "updates": [
         {
-          "version": "1.0.0",
-          "update_link": "https://github.com/Brawl345/twOpenOriginalImage/releases/download/1.0.0/twopenoriginalimage-1.0.0.xpi",
-          "update_info_url": "https://raw.githubusercontent.com/Brawl345/twOpenOriginalImage/refs/tags/1.0.0/CHANGES.md"
+          "version": "1.0.1",
+          "update_link": "https://github.com/Brawl345/twOpenOriginalImage/releases/download/1.0.1/twopenoriginalimage-1.0.1.xpi",
+          "update_info_url": "https://raw.githubusercontent.com/Brawl345/twOpenOriginalImage/refs/tags/1.0.1/CHANGES.md"
         }
       ]
     }
