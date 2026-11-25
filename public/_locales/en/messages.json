@@ -32,6 +32,10 @@
   "OVERLAY_POST": { "message": "Open post" },
   "OVERLAY_LOADING": { "message": "Loading images" },
   "OPERATION_TITLE": { "message": "Active" },
+  "ACCESS_MISSING": {
+    "message": "No access to x.com and pbs.twimg.com."
+  },
+  "ACCESS_GRANT": { "message": "Allow access" },
   "SECTION_OPENING": { "message": "Opening images" },
   "MODE_LABEL": { "message": "Open photos in" },
   "MODE_OVERLAY": { "message": "Overlay on x.com" },

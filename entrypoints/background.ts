@@ -4,6 +4,7 @@ import { t } from '../lib/i18n';
 import { downloadFilename, findValidImageUrl } from '../lib/media-url';
 import type { Message } from '../lib/messages';
 import { loadOptions, onOptionsChanged, type Options } from '../lib/options';
+import { hasHostAccess } from '../lib/permissions';
 
 const MENU_ID = 'download_image';
 const MEDIA_PATTERN = '*://pbs.twimg.com/media/*';
@@ -80,6 +81,11 @@ export default defineBackground(() => {
       browser.storage.local.remove(OBSOLETE_KEYS).catch(console.error);
     }
     setupMenu().catch(console.error);
+    hasHostAccess().then((granted) => {
+      if (!granted) {
+        return browser.runtime.openOptionsPage();
+      }
+    }, console.error);
   });
   browser.runtime.onStartup.addListener(() => {
     setupMenu().catch(console.error);

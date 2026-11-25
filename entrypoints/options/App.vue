@@ -24,10 +24,12 @@ import {
   resetOptions,
   saveOptions,
 } from '../../lib/options';
+import { hasHostAccess, requestHostAccess } from '../../lib/permissions';
 
 const options = ref<Options>({ ...DEFAULT_OPTIONS });
 const loaded = ref(false);
 const confirmingReset = ref(false);
+const missingAccess = ref(false);
 const modeGroup = useTemplateRef<HTMLElement>('modeGroup');
 const altKey = /Mac/.test(navigator.platform) ? 'Option' : 'Alt';
 const version = browser.runtime.getManifest().version;
@@ -54,6 +56,14 @@ const onModeKey = (event: KeyboardEvent) => {
     event.preventDefault();
     selectMode(!options.value.DISPLAY_ALL_IN_ONE_PAGE);
   }
+};
+
+const checkAccess = async () => {
+  missingAccess.value = !(await hasHostAccess());
+};
+
+const grantAccess = () => {
+  requestHostAccess().then(checkAccess, console.error);
 };
 
 const reset = async () => {
@@ -86,7 +96,10 @@ const SHORTCUTS: [string[], string][] = [
 let stopListening: (() => void) | undefined;
 onMounted(async () => {
   options.value = await loadOptions();
+  await checkAccess();
   loaded.value = true;
+  browser.permissions.onAdded.addListener(checkAccess);
+  browser.permissions.onRemoved.addListener(checkAccess);
   stopListening = onOptionsChanged((changed) => {
     options.value = changed;
   });
@@ -94,6 +107,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   stopListening?.();
   clearTimeout(resetTimer);
+  browser.permissions.onAdded.removeListener(checkAccess);
+  browser.permissions.onRemoved.removeListener(checkAccess);
 });
 </script>
 
@@ -103,6 +118,16 @@ onBeforeUnmount(() => {
       <img src="/img/icon_48.png" alt="" width="40" height="40" />
       <h1>{{ t('ext_title') }}</h1>
     </header>
+
+    <section v-if="missingAccess" class="card access" role="alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3 2 21h20L12 3zm0 6v6m0 3v.5" />
+      </svg>
+      <p>{{ t('ACCESS_MISSING') }}</p>
+      <button type="button" class="grant" @click="grantAccess">
+        {{ t('ACCESS_GRANT') }}
+      </button>
+    </section>
 
     <label
       for="operation"
@@ -290,6 +315,53 @@ h2 {
   border-radius: 16px;
   background: var(--card);
   box-shadow: var(--shadow);
+}
+
+.access {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 20px;
+  border-color: rgba(244, 33, 46, 0.5);
+  background: linear-gradient(
+    135deg,
+    rgba(244, 33, 46, 0.1),
+    transparent 70%
+  ), var(--card);
+}
+
+.access svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.access p {
+  flex: 1;
+  margin: 0;
+  font-weight: 600;
+}
+
+.grant {
+  flex: none;
+  min-height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grant:hover {
+  background: var(--blue-hover);
 }
 
 .power {

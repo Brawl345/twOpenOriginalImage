@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Ask for host permissions when they're missing due to updated ones
+
 ## v1.0.0
 
 - Complete rewrite with a new, fresh design
