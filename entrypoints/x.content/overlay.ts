@@ -12,7 +12,7 @@ import {
 import { type PostPhoto, photoOwner } from '../../lib/photos';
 import type { Tweet } from '../../lib/tweets';
 import { buildZip, fetchImage, saveZip, zipBaseName } from '../../lib/zip';
-import Overlay from './Overlay.vue';
+import ImageOverlay from './ImageOverlay.vue';
 
 interface OverlayRequest {
   photos: PostPhoto[];
@@ -90,7 +90,7 @@ export async function showOverlay(
     onMount(container) {
       // WXT's `:host { all: initial !important }` overrides its own `zIndex` option.
       container.style.zIndex = '2147483647';
-      const app = createApp(Overlay, {
+      const app = createApp(ImageOverlay, {
         photos,
         start,
         dark: pageIsDark(),
