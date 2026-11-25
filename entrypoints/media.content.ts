@@ -104,7 +104,7 @@ function showBar(image: MediaImage, options: Options): void {
 }
 
 export default defineContentScript({
-  matches: ['*://pbs.twimg.com/media/*'],
+  matches: ['https://pbs.twimg.com/media/*'],
   runAt: 'document_end',
   async main() {
     const options = await loadOptions();
