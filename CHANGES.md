@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.0
 
 - Complete rewrite with a new, fresh design
 - Works with old and [new Twitter](https://blog.x.com/en/engineering/rebuilding-the-global-town-square-from-scratch)
