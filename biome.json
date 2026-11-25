@@ -9,6 +9,9 @@
     "includes": [
       "lib/**/*.ts",
       "entrypoints/**/*.ts",
+      "entrypoints/**/*.vue",
+      "components/**/*.ts",
+      "components/**/*.vue",
       "tests/**/*.ts",
       "scripts/**/*.ts",
       "*.ts",
@@ -28,5 +31,21 @@
     "formatter": {
       "indentStyle": "space"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.vue"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off"
+          },
+          "complexity": {
+            "useLiteralKeys": "off"
+          }
+        }
+      }
+    }
+  ]
 }

@@ -26,25 +26,29 @@
     "zip:firefox": "wxt zip -b firefox",
     "postinstall": "wxt prepare",
     "check": "npm run lint:types && npm run lint:code && npm test && npm run lint:ext",
-    "lint:types": "wxt prepare && tsc --noEmit",
+    "lint:types": "wxt prepare && vue-tsc --noEmit",
     "lint:code": "biome lint",
     "lint:code-fix": "biome lint --fix",
     "lint:ext": "npm run build:firefox && web-ext lint --no-config-discovery --self-hosted -s .output/firefox",
     "format": "biome format --fix",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",    "release": "tsx scripts/release.ts"
+    "test:watch": "vitest",
+    "release": "tsx scripts/release.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.5",
     "@types/node": "26.6.6",
+    "@wxt-dev/module-vue": "1.0.3",
     "happy-dom": "21.0.4",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "vitest": "5.1.0",
+    "vue-tsc": "3.3.14",
     "web-ext": "10.8.0",
     "wxt": "0.21.5"
   },
   "dependencies": {
-    "fflate": "0.8.3"
+    "fflate": "0.8.3",
+    "vue": "3.5.46"
   }
 }

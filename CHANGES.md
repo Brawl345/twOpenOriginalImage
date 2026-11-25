@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Complete rewrite with a new, fresh design
+- Works with old and [new Twitter](https://blog.x.com/en/engineering/rebuilding-the-global-town-square-from-scratch)
+- Add settings to turn the extension off on the Media tab of profiles and of searches
+- Settings are saved without reloading X tabs
+- New options page with light and dark theme and previews of every option
+- Add German translation
+- Remove TweetDeck support, the custom button text, the tab sorting setting and the userscript
+
 ## v0.1.21
 
 - Heavily improve performance while loading modal

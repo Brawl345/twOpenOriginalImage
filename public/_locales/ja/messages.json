@@ -1,86 +1,76 @@
 {
-    "ext_title" : {
-        "message" : "Twitter 原寸びゅー"
-    ,   "description" : "The title of the extension."
-    }
-,   "ext_short_name" : {
-        "message" : "TVOI"
-    ,   "description" : "The short version of the extension's name."
-    }
-,   "ext_description" : {
-        "message" : "Web版Twitter・TweetDeckで、原寸画像の表示と保存が簡単にできるようになります。"
-    ,   "description" : "The description of the extension."
-    }
-,   "OPTIONS" : {
-        "message" : "Twitter 原寸びゅー"
-    }
-,   "SET" : {
-        "message" : "設定"
-    }
-,   "DEFAULT" : {
-        "message" : "デフォルトに戻す"
-    }
-,   "ENABLED" : {
-        "message" : "有効"
-    }
-,   "DISABLED" : {
-        "message" : "無効"
-    }
-,   "START" : {
-        "message" : "動作開始"
-    }
-,   "STOP" : {
-        "message" : "動作停止"
-    }
-,   "DEFAULT_ACTION_ON_CLICK_EVENT" : {
-        "message" : "クリック時のデフォルト動作（※[Alt]押下時は逆の動作）"
-    }
-,   "DISPLAY_ALL_IN_ONE_PAGE_DESCRIPTION" : {
-        "message" : "全ての画像を同一ページで開く"
-    }
-,   "DISPLAY_ONE_PER_PAGE_DESCRIPTION" : {
-        "message" : "画像を個別に開く"
-    }
-,   "OVERRIDE_CLICK_EVENT" : {
-        "message" : "ツイート上のサムネイル画像クリックで開く"
-    }
-,   "SWAP_IMAGE_URL" : {
-        "message" : "タイムライン上の画像を原寸画像に置換"
-    }
-,   "DISPLAY_ORIGINAL_BUTTONS" : {
-        "message" : "画像を開くボタンの表示"
-    }
-,   "BUTTON_TEXT_HEADER" : {
-        "message" : "画像を開くボタンの文字列"
-    }
-,   "BUTTON_TEXT" : {
-        "message" : "原寸画像"
-    }
-,   "ENABLED_ON_TWEETDECK" : {
-        "message" : "TweetDeck での動作"
-    }
-,   "OVERRIDE_GALLERY_FOR_TWEETDECK" : {
-        "message" : "TweetDeck: ギャラリー機能（画像ポップアップ）を置換"
-    }
-,   "DOWNLOAD_ORIGINAL_IMAGE" : {
-        "message" : "原寸画像を保存"
-    }
-,   "UNDER_SUSPENSION" : {
-        "message" : "停止中"
-    }
-,   "HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY" : {
-        "message" : "ダウンロードボタンを自動的に隠す"
-    }
-,   "SUPPRESS_FILENAME_SUFFIX" : {
-        "message" : "ファイル名の接尾辞(-orig等)抑制"
-    }
-,   "SAME_FILENAME_AS_IN_ZIP" : {
-        "message" : "個別ダウンロード時のファイル名をZIP中のものと揃える"
-    }
-,   "TAB_SORTING" : {
-        "message" : "タブ並び替え"
-    }
-,   "TAB_SORTING_ENABLED" : {
-        "message" : "[1][2][3][4]"
-    }
+  "ext_title": {
+    "message": "Twitter 原寸びゅー",
+    "description": "The title of the extension."
+  },
+  "ext_short_name": {
+    "message": "TVOI",
+    "description": "The short version of the extension's name."
+  },
+  "ext_description": {
+    "message": "X の画像を原寸で開きます。",
+    "description": "The description of the extension."
+  },
+  "BUTTON_TEXT": { "message": "原寸画像" },
+  "DISPLAY_ALL_IN_ONE_PAGE_DESCRIPTION": { "message": "全ての画像を同一ページで開く" },
+  "DISPLAY_ONE_PER_PAGE_DESCRIPTION": { "message": "画像を個別に開く" },
+  "DOWNLOAD_ORIGINAL_IMAGE": { "message": "原寸画像を保存" },
+  "DOWNLOAD": { "message": "ダウンロード" },
+  "UNDER_SUSPENSION": { "message": "停止中" },
+  "OVERLAY_NEXT": { "message": "次の画像" },
+  "OVERLAY_PREVIOUS": { "message": "前の画像" },
+  "OVERLAY_ZIP": { "message": "ZIP" },
+  "OVERLAY_SIZE": { "message": "サイズ" },
+  "OVERLAY_SIZE_FIT_WINDOW": { "message": "全体表示" },
+  "OVERLAY_SIZE_FIT_WIDTH": { "message": "幅調節" },
+  "OVERLAY_SIZE_FIT_HEIGHT": { "message": "高さ調節" },
+  "OVERLAY_SIZE_FULL": { "message": "原寸" },
+  "OVERLAY_BACKGROUND": { "message": "背景" },
+  "OVERLAY_BACKGROUND_BLACK": { "message": "黒" },
+  "OVERLAY_BACKGROUND_WHITE": { "message": "白" },
+  "OVERLAY_CLOSE": { "message": "閉じる" },
+  "OVERLAY_POST": { "message": "ポストを開く" },
+  "OVERLAY_LOADING": { "message": "画像を読み込み中" },
+  "OPERATION_TITLE": { "message": "有効" },
+  "SECTION_OPENING": { "message": "画像の開き方" },
+  "MODE_LABEL": { "message": "写真を開く場所" },
+  "MODE_OVERLAY": { "message": "x.com 上のオーバーレイ" },
+  "MODE_TABS": { "message": "写真ごとに新しいタブ" },
+  "MODE_ALT_HINT": {
+    "message": "$KEY$+クリックで、もう一方の方法で開きます。",
+    "placeholders": { "key": { "content": "$1", "example": "Alt" } }
+  },
+  "OPTION_SWAP_IMAGE_URL": {
+    "message": "タイムラインの写真を原寸で読み込む（通信量が増えます）"
+  },
+  "SECTION_BUTTONS": { "message": "ボタンとクリック" },
+  "OPTION_DISPLAY_ORIGINAL_BUTTONS": { "message": "原寸画像ボタンを表示" },
+  "OPTION_OVERRIDE_CLICK_EVENT": {
+    "message": "写真のクリックで原寸画像を開く"
+  },
+  "OPTION_SHOW_IN_TIMELINE": { "message": "タイムライン、プロフィール、検索" },
+  "OPTION_SHOW_IN_DETAIL_PAGE": { "message": "ポストの詳細ページ" },
+  "OPTION_SHOW_IN_MEDIA_PAGE": { "message": "プロフィールのメディアタブ" },
+  "OPTION_SHOW_IN_SEARCH_MEDIA": { "message": "検索のメディアタブ" },
+  "SECTION_DOWNLOADS": { "message": "ダウンロードとファイル名" },
+  "OPTION_HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY": {
+    "message": "マウスを乗せたときだけダウンロードリンクを表示"
+  },
+  "OPTION_SAME_FILENAME_AS_IN_ZIP": {
+    "message": "個別ダウンロードも ZIP と同じファイル名にする"
+  },
+  "OPTION_SUPPRESS_FILENAME_SUFFIX": {
+    "message": "ファイル名から -orig を省く"
+  },
+  "SECTION_SHORTCUTS": { "message": "キーボードショートカット" },
+  "SHORTCUT_OPEN": {
+    "message": "マウスポインターの下にあるポストの写真を開く"
+  },
+  "SHORTCUT_PAGE": { "message": "1画面スクロール（Shift で戻る）" },
+  "SHORTCUT_ZIP": { "message": "すべてを ZIP でダウンロード" },
+  "SHORTCUT_SIZE": { "message": "画像サイズを切り替え" },
+  "SHORTCUT_BACKGROUND": { "message": "背景を切り替え" },
+  "RESET": { "message": "デフォルトに戻す" },
+  "RESET_CONFIRM": { "message": "もう一度クリックするとリセットします" },
+  "SOURCE_CODE": { "message": "ソースコード" }
 }

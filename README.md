@@ -1,6 +1,6 @@
 # Twitter View Original Images (twOpenOriginalImage)
 
-Open images on X in original size. Adds an "Original" button to tweets with images, shows them in an overlay or opens each in its own tab, downloads them one by one or as a ZIP and redirects `pbs.twimg.com/media/…` URLs to the original size.
+Browser extension for Chrome and Firefox that opens and downloads images on X in original size. Click the toolbar icon for the settings.
 
 Fork of [twOpenOriginalImage](https://github.com/furyutei/twOpenOriginalImage) by furyu with support for x.com.
 

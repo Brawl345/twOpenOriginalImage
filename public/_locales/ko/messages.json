@@ -1,86 +1,72 @@
 {
-    "ext_title" : {
-        "message" : "Twitter 원본 뷰어"
-    ,   "description" : "The title of the extension."
-    }
-,   "ext_short_name" : {
-        "message" : "TVOI"
-    ,   "description" : "The short version of the extension's name."
-    }
-,   "ext_description" : {
-        "message" : "Web버전 Twitter・TweetDeck에서 원본이미지 표시와 저장을 손쉽게 할 수 있습니다"
-    ,   "description" : "The description of the extension."
-    }
-,   "OPTIONS" : {
-        "message" : "Twitter 원본 뷰어"
-    }
-,   "SET" : {
-        "message" : "설정"
-    }
-,   "DEFAULT" : {
-        "message" : "최초 설정으로 복구"
-    }
-,   "ENABLED" : {
-        "message" : "예"
-    }
-,   "DISABLED" : {
-        "message" : "아니오"
-    }
-,   "START" : {
-        "message" : "동작 개시"
-    }
-,   "STOP" : {
-        "message" : "정지"
-    }
-,   "DEFAULT_ACTION_ON_CLICK_EVENT" : {
-        "message" : "마우스 클릭 기본 동작（※[Alt]를 누르면 역동작）"
-    }
-,   "DISPLAY_ALL_IN_ONE_PAGE_DESCRIPTION" : {
-        "message" : "모든 이미지를 같은 페이지에 열기"
-    }
-,   "DISPLAY_ONE_PER_PAGE_DESCRIPTION" : {
-        "message" : "이미지마다 따로 열기"
-    }
-,   "OVERRIDE_CLICK_EVENT" : {
-        "message" : "썸네일을 클릭하여 열기"
-    }
-,   "SWAP_IMAGE_URL" : {
-        "message" : "타임 라인의 이미지를 원본 크기의 이미지로 교체하십시오"
-    }
-,   "DISPLAY_ORIGINAL_BUTTONS" : {
-        "message" : "이미지 보기 버튼 표시"
-    }
-,   "BUTTON_TEXT_HEADER" : {
-        "message" : "이미지 보기 버튼 문자 설정"
-    }
-,   "BUTTON_TEXT" : {
-        "message" : "ORIGINAL"
-    }
-,   "ENABLED_ON_TWEETDECK" : {
-        "message" : "TweetDeck에서 동작"
-    }
-,   "OVERRIDE_GALLERY_FOR_TWEETDECK" : {
-        "message" : "TweetDeck: 갤러리 기능（이미지 팝업）치환"
-    }
-,   "DOWNLOAD_ORIGINAL_IMAGE" : {
-        "message" : "원본이미지로 저장"
-    }
-,   "UNDER_SUSPENSION" : {
-        "message" : "정지중"
-    }
-,   "HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY" : {
-        "message" : "자동으로 다운로드 버튼 숨기기"
-    }
-,   "SUPPRESS_FILENAME_SUFFIX" : {
-        "message" : "파일 이름의 접미사 (예 : -orig)를 표시하지 않습니다"
-    }
-,   "SAME_FILENAME_AS_IN_ZIP" : {
-        "message" : "단독 다운로드 시 ZIP 파일과 동일한 파일명 사용"
-    }
-,   "TAB_SORTING" : {
-        "message" : "탭 정렬"
-    }
-,   "TAB_SORTING_ENABLED" : {
-        "message" : "[1][2][3][4]"
-    }
+  "ext_title": {
+    "message": "Twitter 원본 뷰어",
+    "description": "The title of the extension."
+  },
+  "ext_short_name": {
+    "message": "TVOI",
+    "description": "The short version of the extension's name."
+  },
+  "ext_description": {
+    "message": "X의 이미지를 원본 크기로 엽니다.",
+    "description": "The description of the extension."
+  },
+  "BUTTON_TEXT": { "message": "ORIGINAL" },
+  "DISPLAY_ALL_IN_ONE_PAGE_DESCRIPTION": { "message": "모든 이미지를 같은 페이지에 열기" },
+  "DISPLAY_ONE_PER_PAGE_DESCRIPTION": { "message": "이미지마다 따로 열기" },
+  "DOWNLOAD_ORIGINAL_IMAGE": { "message": "원본이미지로 저장" },
+  "DOWNLOAD": { "message": "다운로드" },
+  "UNDER_SUSPENSION": { "message": "정지중" },
+  "OVERLAY_NEXT": { "message": "다음 이미지" },
+  "OVERLAY_PREVIOUS": { "message": "이전 이미지" },
+  "OVERLAY_ZIP": { "message": "ZIP" },
+  "OVERLAY_SIZE": { "message": "크기" },
+  "OVERLAY_SIZE_FIT_WINDOW": { "message": "창에 맞춤" },
+  "OVERLAY_SIZE_FIT_WIDTH": { "message": "너비에 맞춤" },
+  "OVERLAY_SIZE_FIT_HEIGHT": { "message": "높이에 맞춤" },
+  "OVERLAY_SIZE_FULL": { "message": "원본 크기" },
+  "OVERLAY_BACKGROUND": { "message": "배경" },
+  "OVERLAY_BACKGROUND_BLACK": { "message": "검정" },
+  "OVERLAY_BACKGROUND_WHITE": { "message": "흰색" },
+  "OVERLAY_CLOSE": { "message": "닫기" },
+  "OVERLAY_POST": { "message": "게시물 열기" },
+  "OVERLAY_LOADING": { "message": "이미지 불러오는 중" },
+  "OPERATION_TITLE": { "message": "사용" },
+  "SECTION_OPENING": { "message": "이미지 열기" },
+  "MODE_LABEL": { "message": "사진 열기 방식" },
+  "MODE_OVERLAY": { "message": "x.com 위 오버레이" },
+  "MODE_TABS": { "message": "사진마다 새 탭" },
+  "MODE_ALT_HINT": {
+    "message": "$KEY$+클릭하면 다른 방식으로 엽니다.",
+    "placeholders": { "key": { "content": "$1", "example": "Alt" } }
+  },
+  "OPTION_SWAP_IMAGE_URL": {
+    "message": "타임라인 사진을 원본 크기로 불러오기 (데이터 사용량 증가)"
+  },
+  "SECTION_BUTTONS": { "message": "버튼과 클릭" },
+  "OPTION_DISPLAY_ORIGINAL_BUTTONS": { "message": "원본 버튼 표시" },
+  "OPTION_OVERRIDE_CLICK_EVENT": { "message": "사진을 클릭하면 원본 열기" },
+  "OPTION_SHOW_IN_TIMELINE": { "message": "타임라인, 프로필, 검색" },
+  "OPTION_SHOW_IN_DETAIL_PAGE": { "message": "게시물 페이지" },
+  "OPTION_SHOW_IN_MEDIA_PAGE": { "message": "프로필의 미디어 탭" },
+  "OPTION_SHOW_IN_SEARCH_MEDIA": { "message": "검색의 미디어 탭" },
+  "SECTION_DOWNLOADS": { "message": "다운로드와 파일 이름" },
+  "OPTION_HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY": {
+    "message": "마우스를 올릴 때만 다운로드 링크 표시"
+  },
+  "OPTION_SAME_FILENAME_AS_IN_ZIP": {
+    "message": "개별 다운로드도 ZIP과 같은 파일 이름 사용"
+  },
+  "OPTION_SUPPRESS_FILENAME_SUFFIX": {
+    "message": "파일 이름에서 -orig 생략"
+  },
+  "SECTION_SHORTCUTS": { "message": "단축키" },
+  "SHORTCUT_OPEN": { "message": "마우스 포인터 아래 게시물의 사진 열기" },
+  "SHORTCUT_PAGE": { "message": "한 화면 스크롤 (Shift로 뒤로)" },
+  "SHORTCUT_ZIP": { "message": "모두 ZIP으로 다운로드" },
+  "SHORTCUT_SIZE": { "message": "이미지 크기 전환" },
+  "SHORTCUT_BACKGROUND": { "message": "배경 전환" },
+  "RESET": { "message": "최초 설정으로 복구" },
+  "RESET_CONFIRM": { "message": "한 번 더 클릭하면 초기화합니다" },
+  "SOURCE_CODE": { "message": "소스 코드" }
 }

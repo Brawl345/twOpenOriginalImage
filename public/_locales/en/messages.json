@@ -1,86 +1,76 @@
 {
-    "ext_title" : {
-        "message" : "Twitter View Original Images"
-    ,   "description" : "The title of the extension."
-    }
-,   "ext_short_name" : {
-        "message" : "TVOI"
-    ,   "description" : "The short version of the extension's name."
-    }
-,   "ext_description" : {
-        "message" : "Open images in original size on Twitter."
-    ,   "description" : "The description of the extension."
-    }
-,   "OPTIONS" : {
-        "message" : "Twitter View Original Images"
-    }
-,   "SET" : {
-        "message" : "set"
-    }
-,   "DEFAULT" : {
-        "message" : "Default"
-    }
-,   "ENABLED" : {
-        "message" : "Enabled"
-    }
-,   "DISABLED" : {
-        "message" : "Disabled"
-    }
-,   "START" : {
-        "message" : "Start"
-    }
-,   "STOP" : {
-        "message" : "Stop"
-    }
-,   "DEFAULT_ACTION_ON_CLICK_EVENT" : {
-        "message" : "Default action on click (another action is performed on alt and click)"
-    }
-,   "DISPLAY_ALL_IN_ONE_PAGE_DESCRIPTION" : {
-        "message" : "Display all in one page"
-    }
-,   "DISPLAY_ONE_PER_PAGE_DESCRIPTION" : {
-        "message" : "Display one image per page"
-    }
-,   "OVERRIDE_CLICK_EVENT" : {
-        "message" : "Display image on click thumbnail of tweet"
-    }
-,   "SWAP_IMAGE_URL" : {
-        "message" : "Replace images on timeline with original-sized ones"
-    }
-,   "DISPLAY_ORIGINAL_BUTTONS" : {
-        "message" : "Display buttons"
-    }
-,   "BUTTON_TEXT_HEADER" : {
-        "message" : "Button Text"
-    }
-,   "BUTTON_TEXT" : {
-        "message" : "Original"
-    }
-,   "ENABLED_ON_TWEETDECK" : {
-        "message" : "On TweetDeck"
-    }
-,   "OVERRIDE_GALLERY_FOR_TWEETDECK" : {
-        "message" : "TweetDeck: Replace image gallery feature"
-    }
-,   "DOWNLOAD_ORIGINAL_IMAGE" : {
-        "message" : "Download original image"
-    }
-,   "UNDER_SUSPENSION" : {
-        "message" : "Under suspension"
-    }
-,   "HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY" : {
-        "message" : "Hide download button automatically"
-    }
-,   "SUPPRESS_FILENAME_SUFFIX" : {
-        "message" : "Suppress suffix (e.g. -orig) of filename"
-    }
-,   "SAME_FILENAME_AS_IN_ZIP" : {
-        "message" : "Use same filename as in ZIP file when downloading alone"
-    }
-,   "TAB_SORTING" : {
-        "message" : "Tab sorting"
-    }
-,   "TAB_SORTING_ENABLED" : {
-        "message" : "[1][2][3][4]"
-    }
+  "ext_title": {
+    "message": "Twitter View Original Images",
+    "description": "The title of the extension."
+  },
+  "ext_short_name": {
+    "message": "TVOI",
+    "description": "The short version of the extension's name."
+  },
+  "ext_description": {
+    "message": "Open images on X in original size.",
+    "description": "The description of the extension."
+  },
+  "BUTTON_TEXT": { "message": "Original" },
+  "DISPLAY_ALL_IN_ONE_PAGE_DESCRIPTION": { "message": "Show all in the overlay" },
+  "DISPLAY_ONE_PER_PAGE_DESCRIPTION": { "message": "Open each image in a tab" },
+  "DOWNLOAD_ORIGINAL_IMAGE": { "message": "Download original image" },
+  "DOWNLOAD": { "message": "Download" },
+  "UNDER_SUSPENSION": { "message": "Paused" },
+  "OVERLAY_NEXT": { "message": "Next" },
+  "OVERLAY_PREVIOUS": { "message": "Previous" },
+  "OVERLAY_ZIP": { "message": "ZIP" },
+  "OVERLAY_SIZE": { "message": "Size" },
+  "OVERLAY_SIZE_FIT_WINDOW": { "message": "Fit window" },
+  "OVERLAY_SIZE_FIT_WIDTH": { "message": "Fit width" },
+  "OVERLAY_SIZE_FIT_HEIGHT": { "message": "Fit height" },
+  "OVERLAY_SIZE_FULL": { "message": "Original" },
+  "OVERLAY_BACKGROUND": { "message": "Background" },
+  "OVERLAY_BACKGROUND_BLACK": { "message": "Black" },
+  "OVERLAY_BACKGROUND_WHITE": { "message": "White" },
+  "OVERLAY_CLOSE": { "message": "Close" },
+  "OVERLAY_POST": { "message": "Open post" },
+  "OVERLAY_LOADING": { "message": "Loading images" },
+  "OPERATION_TITLE": { "message": "Active" },
+  "SECTION_OPENING": { "message": "Opening images" },
+  "MODE_LABEL": { "message": "Open photos in" },
+  "MODE_OVERLAY": { "message": "Overlay on x.com" },
+  "MODE_TABS": { "message": "One tab per photo" },
+  "MODE_ALT_HINT": {
+    "message": "$KEY$-click opens them the other way.",
+    "placeholders": { "key": { "content": "$1", "example": "Alt" } }
+  },
+  "OPTION_SWAP_IMAGE_URL": {
+    "message": "Load full-size photos in the timeline (uses more data)"
+  },
+  "SECTION_BUTTONS": { "message": "Buttons and clicks" },
+  "OPTION_DISPLAY_ORIGINAL_BUTTONS": { "message": "Show the Original button" },
+  "OPTION_OVERRIDE_CLICK_EVENT": {
+    "message": "Clicking a photo opens the original"
+  },
+  "OPTION_SHOW_IN_TIMELINE": {
+    "message": "In timelines, profiles and search"
+  },
+  "OPTION_SHOW_IN_DETAIL_PAGE": { "message": "On post pages" },
+  "OPTION_SHOW_IN_MEDIA_PAGE": { "message": "On the Media tab of profiles" },
+  "OPTION_SHOW_IN_SEARCH_MEDIA": { "message": "On the Media tab of searches" },
+  "SECTION_DOWNLOADS": { "message": "Downloads and file names" },
+  "OPTION_HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY": {
+    "message": "Show download links only on hover"
+  },
+  "OPTION_SAME_FILENAME_AS_IN_ZIP": {
+    "message": "Name single downloads like in the ZIP"
+  },
+  "OPTION_SUPPRESS_FILENAME_SUFFIX": {
+    "message": "Leave -orig out of file names"
+  },
+  "SECTION_SHORTCUTS": { "message": "Keyboard shortcuts" },
+  "SHORTCUT_OPEN": { "message": "Open the photos of the hovered post" },
+  "SHORTCUT_PAGE": { "message": "Scroll one screen (Shift: back)" },
+  "SHORTCUT_ZIP": { "message": "Download all as ZIP" },
+  "SHORTCUT_SIZE": { "message": "Switch the image size" },
+  "SHORTCUT_BACKGROUND": { "message": "Switch the background" },
+  "RESET": { "message": "Reset to defaults" },
+  "RESET_CONFIRM": { "message": "Click again to reset" },
+  "SOURCE_CODE": { "message": "Source code" }
 }

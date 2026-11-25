@@ -1,0 +1,76 @@
+{
+  "ext_title": {
+    "message": "Twitter View Original Images",
+    "description": "The title of the extension."
+  },
+  "ext_short_name": {
+    "message": "TVOI",
+    "description": "The short version of the extension's name."
+  },
+  "ext_description": {
+    "message": "Öffnet Bilder auf X in Originalgröße.",
+    "description": "The description of the extension."
+  },
+  "BUTTON_TEXT": { "message": "Original" },
+  "DISPLAY_ALL_IN_ONE_PAGE_DESCRIPTION": { "message": "Alle im Overlay zeigen" },
+  "DISPLAY_ONE_PER_PAGE_DESCRIPTION": { "message": "Jedes Bild in einem Tab öffnen" },
+  "DOWNLOAD_ORIGINAL_IMAGE": { "message": "Originalbild herunterladen" },
+  "DOWNLOAD": { "message": "Herunterladen" },
+  "UNDER_SUSPENSION": { "message": "Pausiert" },
+  "OVERLAY_NEXT": { "message": "Weiter" },
+  "OVERLAY_PREVIOUS": { "message": "Zurück" },
+  "OVERLAY_ZIP": { "message": "ZIP" },
+  "OVERLAY_SIZE": { "message": "Größe" },
+  "OVERLAY_SIZE_FIT_WINDOW": { "message": "Ans Fenster anpassen" },
+  "OVERLAY_SIZE_FIT_WIDTH": { "message": "An Breite anpassen" },
+  "OVERLAY_SIZE_FIT_HEIGHT": { "message": "An Höhe anpassen" },
+  "OVERLAY_SIZE_FULL": { "message": "Original" },
+  "OVERLAY_BACKGROUND": { "message": "Hintergrund" },
+  "OVERLAY_BACKGROUND_BLACK": { "message": "Schwarz" },
+  "OVERLAY_BACKGROUND_WHITE": { "message": "Weiß" },
+  "OVERLAY_CLOSE": { "message": "Schließen" },
+  "OVERLAY_POST": { "message": "Post öffnen" },
+  "OVERLAY_LOADING": { "message": "Bilder werden geladen" },
+  "OPERATION_TITLE": { "message": "Aktiv" },
+  "SECTION_OPENING": { "message": "Bilder öffnen" },
+  "MODE_LABEL": { "message": "Fotos öffnen in" },
+  "MODE_OVERLAY": { "message": "Overlay auf x.com" },
+  "MODE_TABS": { "message": "Ein Tab pro Foto" },
+  "MODE_ALT_HINT": {
+    "message": "$KEY$-Klick öffnet sie auf die andere Art.",
+    "placeholders": { "key": { "content": "$1", "example": "Alt" } }
+  },
+  "OPTION_SWAP_IMAGE_URL": {
+    "message": "Fotos in der Timeline in voller Größe laden (braucht mehr Daten)"
+  },
+  "SECTION_BUTTONS": { "message": "Buttons und Klicks" },
+  "OPTION_DISPLAY_ORIGINAL_BUTTONS": { "message": "Original-Button anzeigen" },
+  "OPTION_OVERRIDE_CLICK_EVENT": {
+    "message": "Klick auf ein Foto öffnet das Original"
+  },
+  "OPTION_SHOW_IN_TIMELINE": {
+    "message": "In Timelines, Profilen und der Suche"
+  },
+  "OPTION_SHOW_IN_DETAIL_PAGE": { "message": "Auf Post-Seiten" },
+  "OPTION_SHOW_IN_MEDIA_PAGE": { "message": "Im Medien-Tab von Profilen" },
+  "OPTION_SHOW_IN_SEARCH_MEDIA": { "message": "Im Medien-Tab der Suche" },
+  "SECTION_DOWNLOADS": { "message": "Downloads und Dateinamen" },
+  "OPTION_HIDE_DOWNLOAD_BUTTON_AUTOMATICALLY": {
+    "message": "Download-Links erst beim Drüberfahren zeigen"
+  },
+  "OPTION_SAME_FILENAME_AS_IN_ZIP": {
+    "message": "Einzelne Downloads wie im ZIP benennen"
+  },
+  "OPTION_SUPPRESS_FILENAME_SUFFIX": {
+    "message": "-orig im Dateinamen weglassen"
+  },
+  "SECTION_SHORTCUTS": { "message": "Tastenkürzel" },
+  "SHORTCUT_OPEN": { "message": "Fotos des Posts unter dem Mauszeiger öffnen" },
+  "SHORTCUT_PAGE": { "message": "Eine Seite weiterblättern (Shift: zurück)" },
+  "SHORTCUT_ZIP": { "message": "Alle als ZIP herunterladen" },
+  "SHORTCUT_SIZE": { "message": "Bildgröße wechseln" },
+  "SHORTCUT_BACKGROUND": { "message": "Hintergrund wechseln" },
+  "RESET": { "message": "Auf Standard zurücksetzen" },
+  "RESET_CONFIRM": { "message": "Zum Zurücksetzen erneut klicken" },
+  "SOURCE_CODE": { "message": "Quellcode" }
+}
